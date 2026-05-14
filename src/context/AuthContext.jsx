@@ -7,7 +7,7 @@ export function AuthProvider({ children }) {
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || null);
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || null);
 
-  // login ke baad token save karo
+  
   function login(token, email, role) {
     localStorage.setItem('token', token);
     localStorage.setItem('userEmail', email);
@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
     setUserRole(role);
   }
 
-  // logout karo - sab clear karo
+  
   function logout() {
     localStorage.clear();
     setToken(null);
@@ -34,7 +34,7 @@ export function AuthProvider({ children }) {
   );
 }
 
-// custom hook - easy use ke liye
+
 export function useAuth() {
   return useContext(AuthContext);
 }

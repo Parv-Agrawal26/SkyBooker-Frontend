@@ -37,7 +37,7 @@ export default function SearchResults() {
 
   function handleSelectFlight(flight) {
     if (!isLoggedIn) {
-      // login ke baad wापस aane ke liye current URL save karo
+      
       navigate('/login', { state: { from: `/seats/${flight.id}?passengers=${passengers}` } });
       return;
     }
@@ -254,15 +254,12 @@ export default function SearchResults() {
 
                       <small>Per Person</small>
 
-                      <h2>
-                        ₹{flight.price?.toLocaleString()}
+                      <h2 style={{ display: 'flex', gap: '4px' }}>
+                        ₹{flight.price?.toLocaleString()}<span style={{ fontSize: '1.1rem', color: '#64748b'}}>*</span>
                       </h2>
 
-                      <span>
-                        Total ₹
-                        {(
-                          flight.price * passengers
-                        )?.toLocaleString()}
+                      <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        *extra charge may apply
                       </span>
 
                     </div>

@@ -220,6 +220,7 @@ body {
   max-width: 1300px;
   margin: auto;
   padding: 10px 40px;
+  
 }
 
 .section-header {
@@ -235,58 +236,159 @@ body {
   color: #94a3b8;
 }
 
-/* ROUTES */
 
-.routes-grid {
+
+/* STATS */
+
+.stats-banner {
+  margin-top : 50px;
+  margin-bottom: 50px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  padding: 50px 40px;
+}
+
+.stat-item {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-right: 1px solid rgba(255,255,255,0.2);
+}
+
+.stat-item:last-child {
+  border-right: none;
+}
+
+.stat-number {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: white;
+}
+
+.stat-label {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.75);
+}
+
+/* TESTIMONIALS */
+
+.testimonials-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
   margin-bottom: 50px;
 }
 
-.route-card {
-  background: linear-gradient(
-    135deg,
-    rgba(30,41,59,0.9),
-    rgba(15,23,42,0.95)
-  );
-
+.testimonial-card {
+  background: linear-gradient(145deg, rgba(15,23,42,0.95), rgba(30,41,59,0.85));
   border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 28px;
+  padding: 36px 30px;
+  transition: 0.3s ease;
+}
 
-  border-radius: 24px;
+.testimonial-card:hover {
+  transform: translateY(-6px);
+  border-color: #3b82f6;
+}
 
-  padding: 30px;
+.testimonial-stars {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+}
 
+.testimonial-text {
+  color: #cbd5e1;
+  line-height: 1.8;
+  font-size: 1rem;
+  margin-bottom: 28px;
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.author-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.author-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.author-route {
+  color: #60a5fa;
+  font-size: 0.85rem;
+  margin-top: 3px;
+}
+
+/* FAQ */
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 50px;
+}
+
+.faq-item {
+  background: linear-gradient(145deg, rgba(15,23,42,0.95), rgba(30,41,59,0.85));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 24px 28px;
   cursor: pointer;
   transition: 0.3s ease;
 }
 
-.route-card:hover {
-  transform: translateY(-8px);
+.faq-item:hover,
+.faq-item.open {
   border-color: #3b82f6;
 }
 
-.route-top {
+.faq-question {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-
-  font-size: 1.3rem;
-  font-weight: 700;
+  align-items: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #dbe4ff;
 }
 
-.route-plane {
+.faq-chevron {
   color: #60a5fa;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
 }
 
-.route-bottom {
-  margin-top: 30px;
+.faq-item.open .faq-chevron {
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  margin-top: 16px;
   color: #94a3b8;
-}
-
-.route-bottom strong {
-  color: white;
-  font-size: 1.4rem;
+  line-height: 1.8;
+  font-size: 0.95rem;
 }
 
 /* FEATURES */

@@ -323,34 +323,155 @@ body {
   color: #dbe4ff;
 }
 
-/* BUTTON */
+/* TABS */
+
+.bookings-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.tab-btn {
+  padding: 12px 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: #94a3b8;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  border-color: transparent;
+  color: white;
+}
+
+/* CONTROLS */
+
+.bookings-controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 220px;
+  height: 52px;
+  padding: 0 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  color: white;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: #64748b;
+}
+
+.filter-select {
+  height: 52px;
+  padding: 0 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  color: white;
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.filter-select option {
+  background: #0f172a;
+}
+
+/* CARD ACTIONS */
+
+.card-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+
+.print-btn {
+  flex: 1;
+  height: 52px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.06);
+  color: #dbe4ff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.print-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.rebook-btn {
+  flex: 1;
+  height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.rebook-btn:hover {
+  transform: translateY(-2px);
+}
 
 .cancel-btn {
-  width: 100%;
-  height: 58px;
-
-  margin-top: 28px;
-
+  flex: 1;
+  height: 52px;
+  margin-top: 0;
   border: none;
-  border-radius: 18px;
-
-  background: linear-gradient(
-    135deg,
-    #ef4444,
-    #dc2626
-  );
-
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
-
   cursor: pointer;
-  transition: 0.3s ease;
+  transition: 0.2s ease;
 }
 
 .cancel-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* SEARCH FLIGHTS BUTTON */
+
+.search-flights-btn {
+  margin-top: 28px;
+  padding: 14px 36px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.search-flights-btn:hover {
   transform: translateY(-3px);
 }
+
+/* BUTTON (old — keep for safety) */
 
 /* REFUND */
 

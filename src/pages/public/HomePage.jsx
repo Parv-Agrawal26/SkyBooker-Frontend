@@ -9,6 +9,8 @@ import {
   Wallet,
   Zap,
   LayoutDashboard,
+  Star,
+  ChevronDown,
 } from 'lucide-react';
 
 import './HomePage.css';
@@ -164,51 +166,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* POPULAR ROUTES */}
-      <section className="content-section">
-
-        <div className="section-header">
-          <h2>Popular Routes</h2>
-          <p>Most booked destinations this week</p>
-        </div>
-
-        <div className="routes-grid">
-          {popularRoutes.map((route, i) => (
-            <div
-              key={i}
-              className="route-card"
-              onClick={() => {
-                setForm({
-                  source: route.from,
-                  destination: route.to,
-                  date: '',
-                  passengers: 1,
-                });
-
-                window.scrollTo({
-                  top: 0,
-                  behavior: 'smooth',
-                });
-              }}
-            >
-              <div className="route-top">
-                <span>{route.from}</span>
-
-                <Plane size={18} className="route-plane" />
-
-                <span>{route.to}</span>
-              </div>
-
-              <div className="route-bottom">
-                Starting from
-                <strong> ₹{route.price}</strong>
-              </div>
-            </div>
-          ))}
-        </div>
-
-      </section>
-
       {/* FEATURES */}
       <section className="content-section">
 
@@ -235,15 +192,122 @@ export default function HomePage() {
 
       </section>
 
+      {/* STATS */}
+      <section className="stats-banner">
+        {stats.map((s, i) => (
+          <div key={i} className="stat-item">
+            <span className="stat-number">{s.number}</span>
+            <span className="stat-label">{s.label}</span>
+          </div>
+        ))}
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="content-section">
+        <div className="section-header">
+          <h2>What Travelers Say</h2>
+          <p>Real experiences from real passengers</p>
+        </div>
+        <div className="testimonials-grid">
+          {testimonials.map((t, i) => (
+            <div key={i} className="testimonial-card">
+              <div className="testimonial-stars">
+                {Array.from({ length: t.rating }).map((_, j) => (
+                  <Star key={j} size={16} fill="#facc15" color="#facc15" />
+                ))}
+              </div>
+              <p className="testimonial-text">"{t.text}"</p>
+              <div className="testimonial-author">
+                <div className="author-avatar">{t.name[0]}</div>
+                <div>
+                  <div className="author-name">{t.name}</div>
+                  <div className="author-route">{t.route}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="content-section">
+        <div className="section-header">
+          <h2>Frequently Asked Questions</h2>
+          <p>Quick answers to common questions</p>
+        </div>
+        <div className="faq-list">
+          {faqs.map((faq, i) => (
+            <FAQItem key={i} faq={faq} />
+          ))}
+        </div>
+      </section>
+
     </div>
   );
 }
 
-const popularRoutes = [
-  { from: 'Delhi', to: 'Mumbai', price: '4,499' },
-  { from: 'Mumbai', to: 'Bengaluru', price: '4,799' },
-  { from: 'Delhi', to: 'Bengaluru', price: '4,999' },
-  { from: 'Mumbai', to: 'Delhi', price: '4,299' },
+function FAQItem({ faq }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`faq-item ${open ? 'open' : ''}`} onClick={() => setOpen(!open)}>
+      <div className="faq-question">
+        <span>{faq.q}</span>
+        <ChevronDown size={20} className="faq-chevron" />
+      </div>
+      {open && <p className="faq-answer">{faq.a}</p>}
+    </div>
+  );
+}
+
+const stats = [
+  { number: '50,000+', label: 'Flights Booked' },
+  { number: '100+', label: 'Destinations' },
+  { number: '30+', label: 'Airlines' },
+  { number: '99%', label: 'Customer Satisfaction' },
+];
+
+const testimonials = [
+  {
+    name: 'Priya Sharma',
+    route: 'Delhi → Mumbai',
+    rating: 5,
+    text: 'Booked in under 2 minutes. The seat selection was smooth and the ticket arrived instantly.',
+  },
+  {
+    name: 'Rahul Mehta',
+    route: 'Mumbai → Bengaluru',
+    rating: 5,
+    text: 'Best flight booking experience I have had. Clean UI and no hidden charges.',
+  },
+  {
+    name: 'Ananya Iyer',
+    route: 'Chennai → Delhi',
+    rating: 4,
+    text: 'Cancellation and refund were processed quickly. Will definitely use again.',
+  },
+];
+
+const faqs = [
+  {
+    q: 'Can I cancel my booking?',
+    a: 'Yes. You can cancel any booking from My Bookings before the departure time. Refunds are processed within 5–7 business days.',
+  },
+  {
+    q: 'How do I get my ticket after booking?',
+    a: 'Your e-ticket with PNR is shown immediately on the confirmation screen and is also saved under My Bookings.',
+  },
+  {
+    q: 'Is my payment information secure?',
+    a: 'Absolutely. All transactions are encrypted and we never store your card details on our servers.',
+  },
+  {
+    q: 'Can I book for multiple passengers?',
+    a: 'Yes. You can select up to 6 passengers in a single booking from the search form.',
+  },
+  {
+    q: 'What if no seats are available?',
+    a: 'The seat map will show all occupied seats in real time. If a flight is full, you will see no available seats and can search for another flight.',
+  },
 ];
 
 const features = [

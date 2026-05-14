@@ -17,7 +17,7 @@ export default function BookingConfirm() {
       const res = await paymentApi.getByBooking(bookingId);
       setPayment(res.data);
     } catch (err) {
-      // payment details load nahi hue toh bhi confirm page dikhao
+      
     }
   }
 

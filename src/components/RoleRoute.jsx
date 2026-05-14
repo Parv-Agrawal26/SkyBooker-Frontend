@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// role match nahi hai toh home pe bhejo
+
 export default function RoleRoute({ children, role }) {
   const { isLoggedIn, userRole } = useAuth();
 

@@ -1,340 +1,3 @@
-// import React, { useState, useEffect } from 'react';
-// import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-// import { seatApi, bookingApi, passengerApi, flightApi } from '../../api/api';
-// import { useAuth } from '../../context/AuthContext';
-// import './SeatSelection.css';
-
-// export default function SeatSelection() {
-//   const { flightId } = useParams();
-//   const [searchParams] = useSearchParams();
-//   const navigate = useNavigate();
-//   const { userEmail } = useAuth();
-
-//   const passengers = parseInt(searchParams.get('passengers') || 1);
-
-//   const [step, setStep] = useState(1); // 1=seats, 2=passenger details
-//   const [seats, setSeats] = useState([]);
-//   const [selectedSeats, setSelectedSeats] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState('');
-//   const [bookingId, setBookingId] = useState(null);
-
-//   // passenger form - ek form per passenger
-//   const [passengerForms, setPassengerForms] = useState(
-//     Array(passengers).fill(null).map(() => ({
-//       title: 'Mr',
-//       firstName: '',
-//       lastName: '',
-//       dateOfBirth: '',
-//       gender: 'MALE',
-//       passportNumber: '',
-//       nationality: 'Indian',
-//       passportExpiry: '',
-//       passengerType: 'ADULT',
-//     }))
-//   );
-
-//   useEffect(() => {
-//     fetchSeats();
-//   }, []);
-
-//   async function fetchSeats() {
-//     try {
-//       const res = await seatApi.getAvailableSeats(flightId);
-//       setSeats(res.data);
-//     } catch (err) {
-//       setError('Could not load seat map.');
-//     } finally {
-//       setLoading(false);
-//     }
-//   }
-
-//   async function handleSeatClick(seat) {
-//     if (seat.status !== 'AVAILABLE') return;
-
-//     // already selected hai toh deselect karo
-//     if (selectedSeats.find(s => s.id === seat.id)) {
-//       setSelectedSeats(selectedSeats.filter(s => s.id !== seat.id));
-//       return;
-//     }
-
-//     // max passengers ke baad select mat karo
-//     if (selectedSeats.length >= passengers) {
-//       alert(`You can only select ${passengers} seat(s)`);
-//       return;
-//     }
-
-//     try {
-//       await seatApi.holdSeat(flightId, seat.seatNumber);
-//       setSelectedSeats([...selectedSeats, seat]);
-//       // seat status update karo locally
-//       setSeats(seats.map(s => s.id === seat.id ? { ...s, status: 'HELD' } : s));
-//     } catch (err) {
-//       alert(err.response?.data?.message || 'Could not hold seat');
-//     }
-//   }
-
-//   async function handleProceedToPassengers() {
-//     if (selectedSeats.length !== passengers) {
-//       alert(`Please select ${passengers} seat(s)`);
-//       return;
-//     }
-
-//     // booking banao
-//     try {
-//       const bookingRes = await bookingApi.createBooking({
-//         flightId: parseInt(flightId),
-//         userEmail,
-//         seats: passengers,
-//       });
-//       setBookingId(bookingRes.data.bookingId);
-//       setStep(2);
-//     } catch (err) {
-//       setError(err.response?.data?.message || 'Booking failed');
-//     }
-//   }
-
-//   async function handleSubmitPassengers(e) {
-//     e.preventDefault();
-
-//     try {
-//       // har passenger ka data add karo
-//       for (let i = 0; i < passengerForms.length; i++) {
-//         await passengerApi.addPassenger({
-//           ...passengerForms[i],
-//           bookingId: bookingId.toString(),
-//         });
-//       }
-//       // payment page pe jao
-//       navigate(`/payment/${bookingId}?amount=${calculateTotal()}`);
-//     } catch (err) {
-//       setError(err.response?.data?.message || 'Failed to add passenger details');
-//     }
-//   }
-
-//   function updatePassengerForm(index, field, value) {
-//     const updated = [...passengerForms];
-//     updated[index] = { ...updated[index], [field]: value };
-//     setPassengerForms(updated);
-//   }
-
-//   function calculateTotal() {
-//     // basic calculation - selected seats ki price
-//     return selectedSeats.reduce((sum, seat) => sum + 4500, 0);
-//   }
-
-//   // seats ko class ke hisaab se group karo
-//   const economySeats  = seats.filter(s => s.seatClass === 'ECONOMY');
-//   const businessSeats = seats.filter(s => s.seatClass === 'BUSINESS');
-
-//   if (loading) return <div className="loading">Loading seat map...</div>;
-
-//   return (
-//     <div className="page-container">
-//       {/* Steps indicator */}
-//       <div className="steps">
-//         <div className={`step ${step >= 1 ? 'active' : ''}`}>
-//           <span className="step-number">1</span>
-//           <span>Select Seats</span>
-//         </div>
-//         <div className="step-line"></div>
-//         <div className={`step ${step >= 2 ? 'active' : ''}`}>
-//           <span className="step-number">2</span>
-//           <span>Passenger Details</span>
-//         </div>
-//         <div className="step-line"></div>
-//         <div className="step">
-//           <span className="step-number">3</span>
-//           <span>Payment</span>
-//         </div>
-//       </div>
-
-//       {error && <div className="alert-error" style={{ marginBottom: '20px' }}>{error}</div>}
-
-//       {/* STEP 1 - Seat Map */}
-//       {step === 1 && (
-//         <div className="seat-step">
-//           <div className="card">
-//             <div className="seat-header">
-//               <h2>Select Your Seats</h2>
-//               <p>Select {passengers} seat(s) — {selectedSeats.length} selected</p>
-//             </div>
-
-//             {/* Legend */}
-//             <div className="seat-legend">
-//               <div className="legend-item"><div className="seat-demo available"></div> Available</div>
-//               <div className="legend-item"><div className="seat-demo selected"></div> Selected</div>
-//               <div className="legend-item"><div className="seat-demo held"></div> Held</div>
-//             </div>
-
-//             {/* Business Class */}
-//             {businessSeats.length > 0 && (
-//               <div className="seat-class-section">
-//                 <div className="class-label business">✨ Business Class</div>
-//                 <div className="seats-grid">
-//                   {businessSeats.map(seat => (
-//                     <div
-//                       key={seat.id}
-//                       className={`seat ${seat.status.toLowerCase()} ${selectedSeats.find(s => s.id === seat.id) ? 'selected' : ''}`}
-//                       onClick={() => handleSeatClick(seat)}
-//                       title={`${seat.seatNumber} - ${seat.status}`}
-//                     >
-//                       {seat.seatNumber}
-//                     </div>
-//                   ))}
-//                 </div>
-//               </div>
-//             )}
-
-//             {/* Economy Class */}
-//             {economySeats.length > 0 && (
-//               <div className="seat-class-section">
-//                 <div className="class-label economy">Economy Class</div>
-//                 <div className="seats-grid">
-//                   {economySeats.map(seat => (
-//                     <div
-//                       key={seat.id}
-//                       className={`seat ${seat.status.toLowerCase()} ${selectedSeats.find(s => s.id === seat.id) ? 'selected' : ''}`}
-//                       onClick={() => handleSeatClick(seat)}
-//                       title={`${seat.seatNumber} - ${seat.status}`}
-//                     >
-//                       {seat.seatNumber}
-//                     </div>
-//                   ))}
-//                 </div>
-//               </div>
-//             )}
-
-//             {seats.length === 0 && (
-//               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
-//                 No seats available for this flight
-//               </div>
-//             )}
-//           </div>
-
-//           {/* Selected seats summary */}
-//           {selectedSeats.length > 0 && (
-//             <div className="selected-summary card">
-//               <h3>Selected Seats</h3>
-//               <div className="selected-list">
-//                 {selectedSeats.map(s => (
-//                   <span key={s.id} className="selected-badge">{s.seatNumber}</span>
-//                 ))}
-//               </div>
-//               <button
-//                 className="btn-primary"
-//                 onClick={handleProceedToPassengers}
-//                 disabled={selectedSeats.length !== passengers}
-//               >
-//                 Continue to Passenger Details →
-//               </button>
-//             </div>
-//           )}
-//         </div>
-//       )}
-
-//       {/* STEP 2 - Passenger Details */}
-//       {step === 2 && (
-//         <form onSubmit={handleSubmitPassengers} className="passenger-step">
-//           {passengerForms.map((form, index) => (
-//             <div key={index} className="card passenger-card">
-//               <h3>Passenger {index + 1}</h3>
-//               <div className="passenger-grid">
-//                 <div className="form-group">
-//                   <label>Title</label>
-//                   <select value={form.title} onChange={e => updatePassengerForm(index, 'title', e.target.value)}>
-//                     <option value="Mr">Mr</option>
-//                     <option value="Mrs">Mrs</option>
-//                     <option value="Ms">Ms</option>
-//                     <option value="Dr">Dr</option>
-//                   </select>
-//                 </div>
-//                 <div className="form-group">
-//                   <label>First Name</label>
-//                   <input
-//                     type="text"
-//                     placeholder="Rahul"
-//                     value={form.firstName}
-//                     onChange={e => updatePassengerForm(index, 'firstName', e.target.value)}
-//                     required
-//                   />
-//                 </div>
-//                 <div className="form-group">
-//                   <label>Last Name</label>
-//                   <input
-//                     type="text"
-//                     placeholder="Sharma"
-//                     value={form.lastName}
-//                     onChange={e => updatePassengerForm(index, 'lastName', e.target.value)}
-//                     required
-//                   />
-//                 </div>
-//                 <div className="form-group">
-//                   <label>Date of Birth</label>
-//                   <input
-//                     type="date"
-//                     value={form.dateOfBirth}
-//                     onChange={e => updatePassengerForm(index, 'dateOfBirth', e.target.value)}
-//                     required
-//                   />
-//                 </div>
-//                 <div className="form-group">
-//                   <label>Gender</label>
-//                   <select value={form.gender} onChange={e => updatePassengerForm(index, 'gender', e.target.value)}>
-//                     <option value="MALE">Male</option>
-//                     <option value="FEMALE">Female</option>
-//                     <option value="OTHER">Other</option>
-//                   </select>
-//                 </div>
-//                 <div className="form-group">
-//                   <label>Passport Number</label>
-//                   <input
-//                     type="text"
-//                     placeholder="P1234567"
-//                     value={form.passportNumber}
-//                     onChange={e => updatePassengerForm(index, 'passportNumber', e.target.value)}
-//                     required
-//                   />
-//                 </div>
-//                 <div className="form-group">
-//                   <label>Nationality</label>
-//                   <input
-//                     type="text"
-//                     value={form.nationality}
-//                     onChange={e => updatePassengerForm(index, 'nationality', e.target.value)}
-//                     required
-//                   />
-//                 </div>
-//                 <div className="form-group">
-//                   <label>Passport Expiry</label>
-//                   <input
-//                     type="date"
-//                     value={form.passportExpiry}
-//                     onChange={e => updatePassengerForm(index, 'passportExpiry', e.target.value)}
-//                     required
-//                   />
-//                 </div>
-//                 <div className="form-group">
-//                   <label>Type</label>
-//                   <select value={form.passengerType} onChange={e => updatePassengerForm(index, 'passengerType', e.target.value)}>
-//                     <option value="ADULT">Adult</option>
-//                     <option value="CHILD">Child</option>
-//                     <option value="INFANT">Infant</option>
-//                   </select>
-//                 </div>
-//               </div>
-//             </div>
-//           ))}
-
-//           <div className="step-actions">
-//             <button type="button" className="btn-outline" onClick={() => setStep(1)}>← Back</button>
-//             <button type="submit" className="btn-primary">Continue to Payment →</button>
-//           </div>
-//         </form>
-//       )}
-//     </div>
-//   );
-// }
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -355,6 +18,9 @@ export default function SeatSelection() {
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState('');
   const [bookingId, setBookingId]     = useState(null);
+  const [addonsByPassenger, setAddonsByPassenger] = useState(
+    Array(passengers).fill(null).map(() => ({}))
+  );
 
   const [passengerForms, setPassengerForms] = useState(
     Array(passengers).fill(null).map(() => ({
@@ -378,13 +44,26 @@ export default function SeatSelection() {
     }
   }
 
-  async function handleSeatClick(seat) {
-    if (seat.status !== 'AVAILABLE') return;
+  const [tooltip, setTooltip] = useState(null); // { seat, x, y }
 
+  const CLASS_PRICES = {
+    FIRST:    (parseFloat(searchParams.get('price') || 4500)) * 3,
+    BUSINESS: (parseFloat(searchParams.get('price') || 4500)) * 2,
+    ECONOMY:  (parseFloat(searchParams.get('price') || 4500)) * 1,
+  };
+
+  const AISLE_AFTER = { FIRST: 1, BUSINESS: 1, ECONOMY: 1 };
+
+  async function handleSeatClick(seat) {
+    // Deselect a seat that is already selected (was held by us)
     if (selectedSeats.find(s => s.id === seat.id)) {
+      if (!window.confirm(`Remove seat ${seat.seatNumber} from your selection?`)) return;
       setSelectedSeats(selectedSeats.filter(s => s.id !== seat.id));
+      setSeats(seats.map(s => s.id === seat.id ? { ...s, status: 'AVAILABLE' } : s));
       return;
     }
+
+    if (seat.status !== 'AVAILABLE') return;
 
     if (selectedSeats.length >= passengers) {
       alert(`You can only select ${passengers} seat(s).`);
@@ -398,6 +77,15 @@ export default function SeatSelection() {
     } catch (err) {
       alert(err.response?.data?.message || 'Could not hold seat. Please try again.');
     }
+  }
+
+  function handleMouseEnter(e, seat) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({ seat, x: rect.left + rect.width / 2, y: rect.top - 8 });
+  }
+
+  function handleMouseLeave() {
+    setTooltip(null);
   }
 
   async function handleProceedToPassengers() {
@@ -452,7 +140,7 @@ export default function SeatSelection() {
         });
       }
       // navigate(`/payment/${bookingId}?amount=${calculateTotal()}`);
-      navigate(`/payment/${bookingId}?amount=${calculateTotal()}&flightId=${flightId}`);
+      navigate(`/payment/${bookingId}?amount=${calculateTotal()}&flightId=${flightId}&seats=${selectedSeats.map(s=>s.seatNumber).join(',')}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save passenger details. Please try again.');
     }
@@ -464,9 +152,25 @@ export default function SeatSelection() {
     setPassengerForms(updated);
   }
 
+  function toggleAddon(passengerIndex, addon) {
+    setAddonsByPassenger(prev => {
+      const updated = [...prev];
+      const current = { ...updated[passengerIndex] };
+      if (current[addon.id]) delete current[addon.id];
+      else current[addon.id] = addon;
+      updated[passengerIndex] = current;
+      return updated;
+    });
+  }
+
   function calculateTotal() {
-    // selectedSeats mein actual flight price nahi hai — base amount per seat
-    return selectedSeats.length * (parseFloat(searchParams.get('price') || 4500));
+    const base = parseFloat(searchParams.get('price') || 4500);
+    const multiplier = { FIRST: 3, BUSINESS: 2, ECONOMY: 1 };
+    const seatTotal = selectedSeats.reduce((sum, seat) => sum + base * (multiplier[seat.seatClass] || 1), 0);
+    const addonTotal = addonsByPassenger.reduce((sum, pAddons) =>
+      sum + Object.values(pAddons).reduce((s, a) => s + a.price, 0), 0
+    );
+    return seatTotal + addonTotal;
   }
 
   // FIRST class bhi include karo
@@ -554,127 +258,67 @@ export default function SeatSelection() {
 
             {/* LEGEND */}
             <div className="seat-legend">
-
               <div className="legend-item">
                 <div className="seat-demo available"></div>
                 <span>Available</span>
               </div>
-
               <div className="legend-item">
                 <div className="seat-demo selected"></div>
                 <span>Selected</span>
               </div>
-
               <div className="legend-item">
                 <div className="seat-demo held"></div>
                 <span>Held</span>
               </div>
-
+              <div className="legend-item">
+                <div className="seat-demo booked-demo"></div>
+                <span>Unavailable</span>
+              </div>
             </div>
 
             {/* FIRST */}
             {firstSeats.length > 0 && (
-              <div className="class-section">
-
-                <div className="class-title first">
-                  👑 First Class
-                </div>
-
-                <div className="seats-grid">
-
-                  {firstSeats.map((seat) => (
-
-                    <div
-                      key={seat.id}
-                      className={`seat-box ${seat.status.toLowerCase()} ${
-                        selectedSeats.find(
-                          (s) => s.id === seat.id
-                        )
-                          ? 'selected'
-                          : ''
-                      }`}
-                      onClick={() =>
-                        handleSeatClick(seat)
-                      }
-                    >
-                      {seat.seatNumber}
-                    </div>
-
-                  ))}
-
-                </div>
-
-              </div>
+              <SeatClassSection
+                label="👑 First Class"
+                cls="first"
+                seatList={firstSeats}
+                selectedSeats={selectedSeats}
+                aisleAfter={AISLE_AFTER.FIRST}
+                price={CLASS_PRICES.FIRST}
+                onSeatClick={handleSeatClick}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              />
             )}
 
             {/* BUSINESS */}
             {businessSeats.length > 0 && (
-              <div className="class-section">
-
-                <div className="class-title business">
-                  ✨ Business Class
-                </div>
-
-                <div className="seats-grid">
-
-                  {businessSeats.map((seat) => (
-
-                    <div
-                      key={seat.id}
-                      className={`seat-box ${seat.status.toLowerCase()} ${
-                        selectedSeats.find(
-                          (s) => s.id === seat.id
-                        )
-                          ? 'selected'
-                          : ''
-                      }`}
-                      onClick={() =>
-                        handleSeatClick(seat)
-                      }
-                    >
-                      {seat.seatNumber}
-                    </div>
-
-                  ))}
-
-                </div>
-
-              </div>
+              <SeatClassSection
+                label="✨ Business Class"
+                cls="business"
+                seatList={businessSeats}
+                selectedSeats={selectedSeats}
+                aisleAfter={AISLE_AFTER.BUSINESS}
+                price={CLASS_PRICES.BUSINESS}
+                onSeatClick={handleSeatClick}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              />
             )}
 
             {/* ECONOMY */}
             {economySeats.length > 0 && (
-              <div className="class-section">
-
-                <div className="class-title economy">
-                  Economy Class
-                </div>
-
-                <div className="seats-grid">
-
-                  {economySeats.map((seat) => (
-
-                    <div
-                      key={seat.id}
-                      className={`seat-box ${seat.status.toLowerCase()} ${
-                        selectedSeats.find(
-                          (s) => s.id === seat.id
-                        )
-                          ? 'selected'
-                          : ''
-                      }`}
-                      onClick={() =>
-                        handleSeatClick(seat)
-                      }
-                    >
-                      {seat.seatNumber}
-                    </div>
-
-                  ))}
-
-                </div>
-
-              </div>
+              <SeatClassSection
+                label="Economy Class"
+                cls="economy"
+                seatList={economySeats}
+                selectedSeats={selectedSeats}
+                aisleAfter={AISLE_AFTER.ECONOMY}
+                price={CLASS_PRICES.ECONOMY}
+                onSeatClick={handleSeatClick}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              />
             )}
 
           </div>
@@ -747,256 +391,291 @@ export default function SeatSelection() {
 
       {/* STEP 2 */}
       {step === 2 && (
+        <div className="step2-layout">
 
-        <form
-          onSubmit={handleSubmitPassengers}
-          className="passenger-layout"
-        >
+          <form onSubmit={handleSubmitPassengers} className="passenger-layout">
 
-          {passengerForms.map((form, index) => (
+            {passengerForms.map((form, index) => (
+              <div key={index} className="passenger-card">
 
-            <div
-              key={index}
-              className="passenger-card"
-            >
-
-              <div className="passenger-header">
-
-                <h3>
-                  Passenger {index + 1}
-                </h3>
-
-                <span>
-                  Seat{' '}
-                  {selectedSeats[index]
-                    ?.seatNumber || '--'}
-                </span>
-
-              </div>
-
-              <div className="passenger-grid">
-
-                <div className="form-group">
-                  <label>Title</label>
-
-                  <select
-                    value={form.title}
-                    onChange={(e) =>
-                      updatePassengerForm(
-                        index,
-                        'title',
-                        e.target.value
-                      )
-                    }
-                  >
-                    <option value="Mr">Mr</option>
-                    <option value="Mrs">Mrs</option>
-                    <option value="Ms">Ms</option>
-                    <option value="Dr">Dr</option>
-                  </select>
+                <div className="passenger-header">
+                  <h3>Passenger {index + 1}</h3>
+                  <span>Seat {selectedSeats[index]?.seatNumber || '--'} · {selectedSeats[index]?.seatClass || ''}</span>
                 </div>
 
-                <div className="form-group">
-                  <label>First Name</label>
+                <div className="passenger-grid">
 
-                  <input
-                    type="text"
-                    placeholder="John"
-                    value={form.firstName}
-                    onChange={(e) =>
-                      updatePassengerForm(
-                        index,
-                        'firstName',
-                        e.target.value
-                      )
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Last Name</label>
-
-                  <input
-                    type="text"
-                    placeholder="Doe"
-                    value={form.lastName}
-                    onChange={(e) =>
-                      updatePassengerForm(
-                        index,
-                        'lastName',
-                        e.target.value
-                      )
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Date of Birth</label>
-
-                  <input
-                    type="date"
-                    value={form.dateOfBirth}
-                    max={
-                      new Date()
-                        .toISOString()
-                        .split('T')[0]
-                    }
-                    onChange={(e) =>
-                      updatePassengerForm(
-                        index,
-                        'dateOfBirth',
-                        e.target.value
-                      )
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Gender</label>
-
-                  <select
-                    value={form.gender}
-                    onChange={(e) =>
-                      updatePassengerForm(
-                        index,
-                        'gender',
-                        e.target.value
-                      )
-                    }
-                  >
-                    <option value="MALE">
-                      Male
-                    </option>
-
-                    <option value="FEMALE">
-                      Female
-                    </option>
-
-                    <option value="OTHER">
-                      Other
-                    </option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Passenger Type</label>
-
-                  <select
-                    value={form.passengerType}
-                    onChange={(e) =>
-                      updatePassengerForm(
-                        index,
-                        'passengerType',
-                        e.target.value
-                      )
-                    }
-                  >
-                    <option value="ADULT">
-                      Adult
-                    </option>
-
-                    <option value="CHILD">
-                      Child
-                    </option>
-
-                    <option value="INFANT">
-                      Infant
-                    </option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Nationality</label>
-
-                  <input
-                    type="text"
-                    value={form.nationality}
-                    onChange={(e) =>
-                      updatePassengerForm(
-                        index,
-                        'nationality',
-                        e.target.value
-                      )
-                    }
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Passport Number</label>
-
-                  <input
-                    type="text"
-                    placeholder="A1234567"
-                    value={form.passportNumber}
-                    onChange={(e) =>
-                      updatePassengerForm(
-                        index,
-                        'passportNumber',
-                        e.target.value.toUpperCase()
-                      )
-                    }
-                  />
-                </div>
-
-                {form.passportNumber && (
                   <div className="form-group">
-                    <label>
-                      Passport Expiry
-                    </label>
-
-                    <input
-                      type="date"
-                      value={form.passportExpiry}
-                      min={
-                        new Date()
-                          .toISOString()
-                          .split('T')[0]
-                      }
-                      onChange={(e) =>
-                        updatePassengerForm(
-                          index,
-                          'passportExpiry',
-                          e.target.value
-                        )
-                      }
-                    />
+                    <label>Title</label>
+                    <select value={form.title} onChange={(e) => updatePassengerForm(index, 'title', e.target.value)}>
+                      <option value="Mr">Mr</option>
+                      <option value="Mrs">Mrs</option>
+                      <option value="Ms">Ms</option>
+                      <option value="Dr">Dr</option>
+                    </select>
                   </div>
-                )}
+
+                  <div className="form-group">
+                    <label>First Name</label>
+                    <input type="text" placeholder="John" value={form.firstName}
+                      onChange={(e) => updatePassengerForm(index, 'firstName', e.target.value)} required />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Last Name</label>
+                    <input type="text" placeholder="Doe" value={form.lastName}
+                      onChange={(e) => updatePassengerForm(index, 'lastName', e.target.value)} required />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Date of Birth</label>
+                    <input type="date" value={form.dateOfBirth}
+                      max={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => updatePassengerForm(index, 'dateOfBirth', e.target.value)} required />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Gender</label>
+                    <select value={form.gender} onChange={(e) => updatePassengerForm(index, 'gender', e.target.value)}>
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Passenger Type</label>
+                    <select value={form.passengerType} onChange={(e) => updatePassengerForm(index, 'passengerType', e.target.value)}>
+                      <option value="ADULT">Adult</option>
+                      <option value="CHILD">Child</option>
+                      <option value="INFANT">Infant</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Nationality</label>
+                    <input type="text" value={form.nationality}
+                      onChange={(e) => updatePassengerForm(index, 'nationality', e.target.value)} />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Passport Number</label>
+                    <input type="text" placeholder="A1234567" value={form.passportNumber}
+                      onChange={(e) => updatePassengerForm(index, 'passportNumber', e.target.value.toUpperCase())} />
+                  </div>
+
+                  {form.passportNumber && (
+                    <div className="form-group">
+                      <label>Passport Expiry</label>
+                      <input type="date" value={form.passportExpiry}
+                        min={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => updatePassengerForm(index, 'passportExpiry', e.target.value)} />
+                    </div>
+                  )}
+
+                </div>
+
+                {/* ADDONS */}
+                <div className="addons-section">
+                  <h4 className="addons-title">Add-ons for Passenger {index + 1}</h4>
+                  <div className="addons-grid">
+                    {ADDONS.map(addon => {
+                      const checked = !!addonsByPassenger[index]?.[addon.id];
+                      return (
+                        <div
+                          key={addon.id}
+                          className={`addon-card ${checked ? 'selected' : ''}`}
+                          onClick={() => toggleAddon(index, addon)}
+                        >
+                          <div className="addon-top">
+                            <span className="addon-icon">{addon.icon}</span>
+                            <div className={`addon-check ${checked ? 'checked' : ''}`}>{checked ? '✓' : ''}</div>
+                          </div>
+                          <div className="addon-name">{addon.name}</div>
+                          <div className="addon-desc">{addon.desc}</div>
+                          <div className="addon-price">+₹{addon.price.toLocaleString()}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
               </div>
+            ))}
 
+            <div className="passenger-actions">
+              <button type="button" className="back-btn" onClick={() => setStep(1)}>← Back</button>
+              <button type="submit" className="payment-btn">Continue To Payment</button>
             </div>
 
-          ))}
+          </form>
 
-          <div className="passenger-actions">
+          {/* ORDER SUMMARY SIDEBAR */}
+          <div className="order-summary-card">
+            <h3>Order Summary</h3>
 
-            <button
-              type="button"
-              className="back-btn"
-              onClick={() => setStep(1)}
-            >
-              ← Back
-            </button>
+            <div className="os-section">
+              <small>Flight</small>
+              <div className="os-route">
+                {searchParams.get('source') || 'Origin'}
+                <span> → </span>
+                {searchParams.get('destination') || 'Destination'}
+              </div>
+            </div>
 
-            <button
-              type="submit"
-              className="payment-btn"
-            >
-              Continue To Payment
-            </button>
+            <div className="os-section">
+              <small>Seats</small>
+              <div className="os-seats">
+                {selectedSeats.map(s => (
+                  <div key={s.id} className="os-seat-row">
+                    <span className="os-seat-num">{s.seatNumber}</span>
+                    <span className="os-seat-class">{s.seatClass}</span>
+                    <span className="os-seat-price">₹{(parseFloat(searchParams.get('price') || 4500) * ({ FIRST: 3, BUSINESS: 2, ECONOMY: 1 }[s.seatClass] || 1)).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
+            {addonsByPassenger.some(p => Object.keys(p).length > 0) && (
+              <div className="os-section">
+                <small>Add-ons</small>
+                {addonsByPassenger.map((pAddons, pi) =>
+                  Object.values(pAddons).map(addon => (
+                    <div key={`${pi}-${addon.id}`} className="os-seat-row">
+                      <span className="os-seat-num">{addon.icon} {addon.name}</span>
+                      <span className="os-seat-class">Pax {pi + 1}</span>
+                      <span className="os-seat-price">₹{addon.price.toLocaleString()}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            <div className="os-divider"></div>
+
+            <div className="os-total">
+              <span>Total (excl. taxes)</span>
+              <strong>₹{calculateTotal().toLocaleString()}</strong>
+            </div>
+            <div className="os-tax">
+              <span>GST (18%)</span>
+              <span>₹{Math.round(calculateTotal() * 0.18).toLocaleString()}</span>
+            </div>
+            <div className="os-grand">
+              <span>Grand Total</span>
+              <strong>₹{Math.round(calculateTotal() * 1.18).toLocaleString()}</strong>
+            </div>
           </div>
 
-        </form>
-
+        </div>
       )}
 
     </div>
 
+    {/* TOOLTIP */}
+    <SeatTooltip tooltip={tooltip} />
+
   </div>
 );
+}
+
+// ── Addons ────────────────────────────────────────────────────────────────────
+const ADDONS = [
+  { id: 'meal_veg',   icon: '🥗', name: 'Veg Meal',       desc: 'Vegetarian in-flight meal',     price: 350  },
+  { id: 'meal_nonveg',icon: '🍗', name: 'Non-Veg Meal',   desc: 'Non-vegetarian in-flight meal', price: 400  },
+  { id: 'baggage_15', icon: '🧳', name: 'Extra 15kg',     desc: 'Additional checked baggage',    price: 800  },
+  { id: 'baggage_30', icon: '🧳', name: 'Extra 30kg',     desc: 'Additional checked baggage',    price: 1400 },
+  { id: 'insurance',  icon: '🛡️', name: 'Travel Insurance',desc: 'Trip cancellation cover',       price: 299  },
+  { id: 'priority',   icon: '⚡', name: 'Priority Boarding',desc: 'Board before general queue',   price: 199  },
+];
+
+// ── Seat Class Section ────────────────────────────────────────────────────────
+const COL_LETTERS = ['A','B','C','D','E','F'];
+
+function SeatClassSection({ label, cls, seatList, selectedSeats, aisleAfter, price, onSeatClick, onMouseEnter, onMouseLeave }) {
+  const availableCount = seatList.filter(s => s.status === 'AVAILABLE').length;
+
+  const rows = {};
+  seatList.forEach(s => {
+    const row = s.seatNumber.replace(/[A-Z]/g, '');
+    if (!rows[row]) rows[row] = [];
+    rows[row].push(s);
+  });
+  Object.values(rows).forEach(r =>
+    r.sort((a, b) => {
+      const ca = a.seatNumber.replace(/[0-9]/g, '');
+      const cb = b.seatNumber.replace(/[0-9]/g, '');
+      return COL_LETTERS.indexOf(ca) - COL_LETTERS.indexOf(cb);
+    })
+  );
+  const sortedRows = Object.keys(rows).sort((a, b) => parseInt(a) - parseInt(b));
+
+  return (
+    <div className="class-section">
+      <div className="class-title-row">
+        <span className={`class-title ${cls}`}>{label}</span>
+        <span className="class-count">{availableCount} seat{availableCount !== 1 ? 's' : ''} available</span>
+        <span className="class-price">from ₹{price.toLocaleString()}</span>
+      </div>
+
+      <div className="seat-col-header">
+        <span className="row-num-spacer"></span>
+        {['A','B'].map(c => <span key={c} className="col-letter">{c}</span>)}
+        <span className="aisle-spacer"></span>
+        {['C','D','E','F'].map(c => <span key={c} className="col-letter">{c}</span>)}
+      </div>
+
+      {sortedRows.map(rowNum => {
+        const rowSeats = rows[rowNum];
+        const left  = rowSeats.filter(s => COL_LETTERS.indexOf(s.seatNumber.replace(/[0-9]/g,'')) <= aisleAfter);
+        const right = rowSeats.filter(s => COL_LETTERS.indexOf(s.seatNumber.replace(/[0-9]/g,'')) >  aisleAfter);
+        return (
+          <div key={rowNum} className="seat-row">
+            <span className="row-num">{rowNum}</span>
+            <div className="seat-group">
+              {left.map(seat => (
+                <SeatBox key={seat.id} seat={seat} selectedSeats={selectedSeats}
+                  onClick={onSeatClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} />
+              ))}
+            </div>
+            <div className="aisle"></div>
+            <div className="seat-group">
+              {right.map(seat => (
+                <SeatBox key={seat.id} seat={seat} selectedSeats={selectedSeats}
+                  onClick={onSeatClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SeatBox({ seat, selectedSeats, onClick, onMouseEnter, onMouseLeave }) {
+  const isSelected = !!selectedSeats.find(s => s.id === seat.id);
+  const cls = isSelected ? 'selected' : seat.status.toLowerCase();
+  return (
+    <div
+      className={`seat-box ${cls}`}
+      onClick={() => onClick(seat)}
+      onMouseEnter={e => onMouseEnter(e, seat)}
+      onMouseLeave={onMouseLeave}
+    >
+      {seat.seatNumber}
+    </div>
+  );
+}
+
+function SeatTooltip({ tooltip }) {
+  if (!tooltip) return null;
+  const { seat, x, y } = tooltip;
+  const statusLabel = { AVAILABLE: 'Available', HELD: 'Held', BOOKED: 'Unavailable' };
+  return (
+    <div className="seat-tooltip" style={{ left: x, top: y }}>
+      <strong>{seat.seatNumber}</strong>
+      <span>{seat.seatClass}</span>
+      <span>{statusLabel[seat.status] || seat.status}</span>
+    </div>
+  );
 }

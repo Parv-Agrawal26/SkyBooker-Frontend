@@ -238,6 +238,15 @@ body {
   color: #64748b;
 }
 
+.form-group input{
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  width: 100%;
+  font-size: 1rem;
+}
+
 .submit-btn {
   margin-top: 10px;
 
@@ -287,6 +296,7 @@ body {
 .google-btn-wrapper {
   display: flex;
   justify-content: center;
+  
 }
 
 .alert-error,
@@ -369,3 +379,4 @@ body {
     font-size: 1.8rem;
   }
 }
+
