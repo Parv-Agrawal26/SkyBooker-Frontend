@@ -1,43 +1,102 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Plane,
-  MapPin,
-  CalendarDays,
-  Users,
-  ShieldCheck,
-  Wallet,
-  Zap,
-  LayoutDashboard,
-  Star,
-  ChevronDown,
+  Plane, MapPin, CalendarDays, Users,
+  ShieldCheck, Wallet, Zap, LayoutDashboard, Star, ChevronDown,
 } from 'lucide-react';
-
+import { airlineApi } from '../../api/api';
 import './HomePage.css';
+
+// ── Airport Autocomplete ──────────────────────────────────────────────────────
+function AirportInput({ label, placeholder, value, onSelect }) {
+  const [query, setQuery]       = useState(value || '');
+  const [results, setResults]   = useState([]);
+  const [open, setOpen]         = useState(false);
+  const debounceRef             = useRef(null);
+  const wrapperRef              = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // Sync if parent resets value (swap)
+  useEffect(() => { setQuery(value || ''); }, [value]);
+
+  function handleChange(e) {
+    const q = e.target.value;
+    setQuery(q);
+    onSelect(''); // clear selected value until user picks
+    clearTimeout(debounceRef.current);
+    if (q.trim().length < 2) { setResults([]); setOpen(false); return; }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await airlineApi.searchAirports(q.trim());
+        setResults(res.data || []);
+        setOpen(true);
+      } catch { setResults([]); }
+    }, 300);
+  }
+
+  function handleSelect(airport) {
+    const display = airport.city || airport.name;
+    setQuery(`${display} (${airport.iataCode})`);
+    onSelect(display);
+    setResults([]);
+    setOpen(false);
+  }
+
+  return (
+    <div className="input-box" ref={wrapperRef} style={{ position: 'relative' }}>
+      <label>{label}</label>
+      <div className="input-wrapper">
+        <MapPin size={18} />
+        <input
+          type="text"
+          placeholder={placeholder}
+          value={query}
+          onChange={handleChange}
+          onFocus={() => results.length > 0 && setOpen(true)}
+          autoComplete="off"
+        />
+      </div>
+      {open && results.length > 0 && (
+        <ul className="airport-dropdown">
+          {results.map(a => (
+            <li key={a.id} onMouseDown={() => handleSelect(a)}>
+              <span className="airport-iata">{a.iataCode}</span>
+              <span className="airport-name">{a.name}</span>
+              <span className="airport-city">{a.city}, {a.country}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function HomePage() {
   const navigate = useNavigate();
 
+  const [tripType, setTripType] = useState('oneway');
   const [form, setForm] = useState({
     source: '',
     destination: '',
     date: '',
+    returnDate: '',
     passengers: 1,
   });
 
-  function handleChange(e) {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+  function swapCities() {
+    setForm(f => ({ ...f, source: f.destination, destination: f.source }));
   }
 
-  function swapCities() {
-    setForm({
-      ...form,
-      source: form.destination,
-      destination: form.source,
-    });
+  function handleChange(e) {
+    setForm({ ...form, [e.target.name]: e.target.value });
   }
 
   function handleSearch(e) {
@@ -47,10 +106,20 @@ export default function HomePage() {
       alert('Please fill all fields');
       return;
     }
+    if (tripType === 'roundtrip' && !form.returnDate) {
+      alert('Please select a return date');
+      return;
+    }
+    if (tripType === 'roundtrip' && form.returnDate < form.date) {
+      alert('Return date cannot be before departure date');
+      return;
+    }
 
-    navigate(
-      `/search?source=${form.source}&destination=${form.destination}&date=${form.date}&passengers=${form.passengers}`
-    );
+    const base = `/search?source=${form.source}&destination=${form.destination}&date=${form.date}&passengers=${form.passengers}`;
+    const url = tripType === 'roundtrip'
+      ? `${base}&tripType=roundtrip&returnDate=${form.returnDate}`
+      : `${base}&tripType=oneway`;
+    navigate(url);
   }
 
   return (
@@ -79,49 +148,44 @@ export default function HomePage() {
           {/* SEARCH CARD */}
           <form className="search-card" onSubmit={handleSearch}>
 
-            <div className="input-grid">
-
-              <div className="input-box">
-                <label>From</label>
-
-                <div className="input-wrapper">
-                  <MapPin size={18} />
-                  <input
-                    type="text"
-                    name="source"
-                    placeholder="Delhi"
-                    value={form.source}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
+            {/* TRIP TYPE TOGGLE */}
+            <div className="trip-type-toggle">
               <button
                 type="button"
-                className="swap-btn"
-                onClick={swapCities}
+                className={`trip-type-btn ${tripType === 'oneway' ? 'active' : ''}`}
+                onClick={() => setTripType('oneway')}
               >
-                ⇄
+                One Way
               </button>
+              <button
+                type="button"
+                className={`trip-type-btn ${tripType === 'roundtrip' ? 'active' : ''}`}
+                onClick={() => setTripType('roundtrip')}
+              >
+                ⇄ Round Trip
+              </button>
+            </div>
+
+            <div className="input-grid">
+
+              <AirportInput
+                label="From"
+                placeholder="Delhi"
+                value={form.source}
+                onSelect={val => setForm(f => ({ ...f, source: val }))}
+              />
+
+              <button type="button" className="swap-btn" onClick={swapCities}>⇄</button>
+
+              <AirportInput
+                label="To"
+                placeholder="Mumbai"
+                value={form.destination}
+                onSelect={val => setForm(f => ({ ...f, destination: val }))}
+              />
 
               <div className="input-box">
-                <label>To</label>
-
-                <div className="input-wrapper">
-                  <MapPin size={18} />
-                  <input
-                    type="text"
-                    name="destination"
-                    placeholder="Mumbai"
-                    value={form.destination}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <div className="input-box">
-                <label>Date</label>
-
+                <label>Departure Date</label>
                 <div className="input-wrapper">
                   <CalendarDays size={18} />
                   <input
@@ -134,21 +198,29 @@ export default function HomePage() {
                 </div>
               </div>
 
+              {tripType === 'roundtrip' && (
+                <div className="input-box">
+                  <label>Return Date</label>
+                  <div className="input-wrapper">
+                    <CalendarDays size={18} />
+                    <input
+                      type="date"
+                      name="returnDate"
+                      value={form.returnDate}
+                      min={form.date || new Date().toISOString().split('T')[0]}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="input-box">
                 <label>Passengers</label>
-
                 <div className="input-wrapper">
                   <Users size={18} />
-
-                  <select
-                    name="passengers"
-                    value={form.passengers}
-                    onChange={handleChange}
-                  >
-                    {[1, 2, 3, 4, 5, 6].map((n) => (
-                      <option key={n} value={n}>
-                        {n} Passenger{n > 1 ? 's' : ''}
-                      </option>
+                  <select name="passengers" value={form.passengers} onChange={handleChange}>
+                    {[1,2,3,4,5,6].map(n => (
+                      <option key={n} value={n}>{n} Passenger{n > 1 ? 's' : ''}</option>
                     ))}
                   </select>
                 </div>

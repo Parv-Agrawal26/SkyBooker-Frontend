@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { paymentApi, seatApi, bookingApi } from '../../api/api';
+import { paymentApi, passengerApi, seatApi } from '../../api/api';
 import { useAuth } from '../../context/AuthContext';
 import './PaymentPage.css';
+
+const HOLD_DURATION = 15 * 60; // 15 minutes in seconds
 
 export default function PaymentPage() {
   const { bookingId }      = useParams();
@@ -10,53 +12,141 @@ export default function PaymentPage() {
   const navigate           = useNavigate();
   const { userEmail }      = useAuth();
 
-  const amount  = parseFloat(searchParams.get('amount') || 4500);
+  const amount   = parseFloat(searchParams.get('amount') || 4500);
   const flightId = searchParams.get('flightId');
+  const selectedSeatNumbers = (searchParams.get('seats') || '').split(',').filter(Boolean);
+
+  // Round trip return params — forwarded through to BookingConfirm
+  const returnFlightId  = searchParams.get('returnFlightId') || '';
+  const returnPrice     = searchParams.get('returnPrice') || '';
+  const returnSource    = searchParams.get('returnSource') || '';
+  const returnDest      = searchParams.get('returnDestination') || '';
+  const returnDate      = searchParams.get('returnDate') || '';
+  const passengersCount = searchParams.get('passengers') || 1;
 
   const [paymentMode, setPaymentMode] = useState('UPI');
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState('');
-  const [heldSeats, setHeldSeats]     = useState([]);
+  const [paxCount, setPaxCount]       = useState(null);
+  const [paxWarning, setPaxWarning]   = useState('');
+  const [timeLeft, setTimeLeft]       = useState(HOLD_DURATION);
+  const timerRef = useRef(null);
 
   const taxes = Math.round(amount * 0.18);
   const total  = amount + taxes;
 
   useEffect(() => {
-    if (flightId) fetchHeldSeats();
-  }, [flightId]);
+    // Load Razorpay checkout script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
 
-  async function fetchHeldSeats() {
+    fetchPassengerCount();
+    timerRef.current = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) {
+          clearInterval(timerRef.current);
+          setError('Your seat hold has expired. Please restart your booking.');
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => {
+      clearInterval(timerRef.current);
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  async function fetchPassengerCount() {
     try {
-      const res = await seatApi.getAvailableSeats(flightId);
-      const held = res.data.filter(s => s.status === 'HELD');
-      setHeldSeats(held);
+      const res = await passengerApi.getCount(bookingId);
+      setPaxCount(res.data);
+      const seatList = (searchParams.get('seats') || '').split(',').filter(Boolean);
+      if (res.data < seatList.length) {
+        setPaxWarning(`Only ${res.data} of ${seatList.length} passenger(s) have been added. Please go back and complete all passenger details.`);
+      }
     } catch (e) { /* ignore */ }
   }
 
+  function formatTime(secs) {
+    const m = String(Math.floor(secs / 60)).padStart(2, '0');
+    const s = String(secs % 60).padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
   async function handlePay() {
+    if (paxWarning) { alert(paxWarning); return; }
+    if (timeLeft === 0) { setError('Your seat hold has expired. Please restart your booking.'); return; }
     setLoading(true);
     setError('');
 
     try {
-      await paymentApi.pay({
+      // Step 1: Create Razorpay order on backend
+      const orderRes = await paymentApi.createOrder({
         bookingId: parseInt(bookingId),
         userEmail,
         amount: total,
-        paymentMode,
       });
+      const { razorpayOrderId, keyId } = orderRes.data;
 
-      if (flightId && heldSeats.length > 0) {
-        await Promise.all(
-          heldSeats.map(seat =>
-            seatApi.confirmSeat(flightId, seat.seatNumber).catch(() => {})
-          )
-        );
-      }
+      // Step 2: Open Razorpay checkout modal
+      const options = {
+        key: keyId,
+        amount: total * 100, // paise
+        currency: 'INR',
+        name: 'SkyBooker',
+        description: `Booking #${bookingId}`,
+        order_id: razorpayOrderId,
+        prefill: { email: userEmail },
+        theme: { color: '#2563eb' },
+        handler: async function (response) {
+          try {
+            // Step 3: Verify signature + save payment
+            await paymentApi.verifyPayment({
+              razorpayOrderId:   response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              bookingId: parseInt(bookingId),
+              userEmail,
+              amount: total,
+              paymentMode: paymentMode,
+            });
 
-      navigate(`/booking-confirm/${bookingId}`);
+            // Step 4: Confirm only the seats this user selected
+            if (flightId && selectedSeatNumbers.length > 0) {
+              await Promise.all(
+                selectedSeatNumbers.map(seatNumber =>
+                  seatApi.confirmSeat(flightId, seatNumber).catch(() => {})
+                )
+              );
+            }
+
+            clearInterval(timerRef.current);
+            navigate(`/booking-confirm/${bookingId}${returnFlightId ? `?returnFlightId=${returnFlightId}&returnPrice=${returnPrice}&returnSource=${encodeURIComponent(returnSource)}&returnDestination=${encodeURIComponent(returnDest)}&returnDate=${returnDate}&passengers=${passengersCount}` : ''}`);
+          } catch (err) {
+            setError(err.response?.data?.message || 'Payment verification failed.');
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setError('Payment cancelled. Your seats are still held.');
+            setLoading(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (response) => {
+        setError(`Payment failed: ${response.error.description}`);
+        setLoading(false);
+      });
+      rzp.open();
+
     } catch (err) {
-      setError(err.response?.data?.message || 'Payment failed. Please try again.');
-    } finally {
+      setError(err.response?.data?.message || 'Could not initiate payment. Please try again.');
       setLoading(false);
     }
   }
@@ -102,57 +192,31 @@ export default function PaymentPage() {
           <div className="payment-card">
 
             <div className="payment-header">
-
               <h2>Payment Method</h2>
-
-              <p>
-                Choose your preferred payment option
-              </p>
-
+              <p>Razorpay secure checkout — pay via UPI, Card, Net Banking or Wallet</p>
             </div>
 
-            <div className="payment-modes">
+            {/* SEAT HOLD COUNTDOWN */}
+            <div className={`hold-timer ${timeLeft <= 120 ? 'urgent' : ''}`}>
+              <span>⏱</span>
+              <div>
+                <strong>Seat hold expires in {formatTime(timeLeft)}</strong>
+                <p>Complete payment before your seats are released</p>
+              </div>
+            </div>
 
-              {paymentModes.map((mode) => (
+            {/* PASSENGER COUNT WARNING */}
+            {paxWarning && (
+              <div className="pax-warning">
+                ⚠ {paxWarning}
+                <button onClick={() => navigate(-1)}>← Go Back</button>
+              </div>
+            )}
 
-                <div
-                  key={mode.value}
-                  className={`payment-mode ${
-                    paymentMode === mode.value
-                      ? 'active'
-                      : ''
-                  }`}
-                  onClick={() =>
-                    setPaymentMode(mode.value)
-                  }
-                >
-
-                  <div className="mode-left">
-
-                    <div className="mode-icon">
-                      {mode.icon}
-                    </div>
-
-                    <div>
-                      <h4>{mode.label}</h4>
-
-                      <span>
-                        Secure payment processing
-                      </span>
-                    </div>
-
-                  </div>
-
-                  <div className="mode-check">
-                    {paymentMode === mode.value
-                      ? '✓'
-                      : ''}
-                  </div>
-
-                </div>
-
+            <div className="razorpay-methods">
+              {['UPI', 'Credit / Debit Card', 'Net Banking', 'Wallet'].map(m => (
+                <div key={m} className="razorpay-method-badge">{m}</div>
               ))}
-
             </div>
 
             {error && (

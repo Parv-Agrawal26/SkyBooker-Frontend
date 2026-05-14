@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { paymentApi, bookingApi } from '../../api/api';
+import { paymentApi, bookingApi, passengerApi } from '../../api/api';
 import { useNavigate } from 'react-router-dom';
 import './MyBookings.css';
 
@@ -9,6 +9,7 @@ export default function MyBookings() {
   const navigate       = useNavigate();
   const [payments, setPayments]   = useState([]);
   const [bookings, setBookings]   = useState({});
+  const [passengers, setPassengers] = useState({}); // bookingId -> passenger list
   const [loading, setLoading]     = useState(true);
   const [cancelMsg, setCancelMsg] = useState('');
   const [search, setSearch]       = useState('');
@@ -16,20 +17,27 @@ export default function MyBookings() {
   const [sortOrder, setSortOrder] = useState('newest');
   const [activeTab, setActiveTab] = useState('upcoming');
 
-  useEffect(() => { fetchMyBookings(); }, []);
+  useEffect(() => { fetchMyBookings(); }, [userEmail]);
 
   async function fetchMyBookings() {
     try {
       const res = await paymentApi.getByUser(userEmail);
       setPayments(res.data);
       const bookingDetails = {};
+      const passengerDetails = {};
       await Promise.all(res.data.map(async (payment) => {
+        if (payment.status === 'REFUNDED') return;
         try {
           const b = await bookingApi.getByBookingId(payment.bookingId);
           bookingDetails[payment.bookingId] = b.data;
+        } catch (e) { /* booking deleted or not found — skip */ }
+        try {
+          const p = await passengerApi.getByBooking(payment.bookingId);
+          passengerDetails[payment.bookingId] = p.data;
         } catch (e) { /* ignore */ }
       }));
       setBookings(bookingDetails);
+      setPassengers(passengerDetails);
     } catch (err) {
       // empty state
     } finally {
@@ -41,6 +49,7 @@ export default function MyBookings() {
     if (!window.confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) return;
     try {
       await paymentApi.refund(bookingId);
+      await bookingApi.cancelBooking(bookingId).catch(() => {});
       setCancelMsg('Booking cancelled. Refund will be processed in 5–7 working days.');
       fetchMyBookings();
     } catch (err) {
@@ -48,13 +57,8 @@ export default function MyBookings() {
     }
   }
 
-  function handleRebook(bookingId) {
-    const booking = bookings[bookingId];
-    if (!booking) return;
-    navigate(`/search?source=${booking.source}&destination=${booking.destination}&date=&passengers=1`);
-  }
-
-  function handlePrint(payment, booking) {
+  function handlePrint(payment, booking, paxList) {
+    const seatNumbers = paxList?.map(p => p.seatNumber).filter(Boolean).join(', ') || '-';
     const win = window.open('', '_blank');
     win.document.write(`
       <html><head><title>Ticket #${payment.bookingId}</title>
@@ -71,7 +75,7 @@ export default function MyBookings() {
       <div class="row"><span class="label">Booking ID</span><span class="value">#${payment.bookingId}</span></div>
       <div class="row"><span class="label">Route</span><span class="value">${booking?.source || '-'} → ${booking?.destination || '-'}</span></div>
       <div class="row"><span class="label">Airline</span><span class="value">${booking?.airline || 'SkyBooker Airways'}</span></div>
-      <div class="row"><span class="label">Seat</span><span class="value">${booking?.seatNumber || '-'}</span></div>
+      <div class="row"><span class="label">Seat</span><span class="value">${seatNumbers}</span></div>
       <div class="row"><span class="label">Departure</span><span class="value">${booking?.departureDate || '-'} ${booking?.departureTime || ''}</span></div>
       <div class="row"><span class="label">Amount Paid</span><span class="value">₹${payment.amount?.toLocaleString()}</span></div>
       <div class="row"><span class="label">Payment Mode</span><span class="value">${payment.paymentMode}</span></div>
@@ -246,10 +250,10 @@ export default function MyBookings() {
                     <strong>{payment.paidAt ? new Date(payment.paidAt).toLocaleDateString('en-IN') : '-'}</strong>
                     <span>Payment Success</span>
                   </div>
-                  {booking?.seatNumber && (
+                  {passengers[payment.bookingId]?.some(p => p.seatNumber) && (
                     <div className="info-card">
                       <small>Seat</small>
-                      <strong>{booking.seatNumber}</strong>
+                      <strong>{passengers[payment.bookingId].map(p => p.seatNumber).filter(Boolean).join(', ')}</strong>
                       <span>Assigned Seat</span>
                     </div>
                   )}
@@ -261,14 +265,36 @@ export default function MyBookings() {
                   <p>{payment.transactionId}</p>
                 </div>
 
+                {/* ADDONS */}
+                {passengers[payment.bookingId]?.some(p => p.addons) && (
+                  <div className="addons-box">
+                    <small>Add-ons</small>
+                    {passengers[payment.bookingId].map((p, i) => {
+                      if (!p.addons) return null;
+                      let list = [];
+                      try { list = JSON.parse(p.addons); } catch { return null; }
+                      if (!list.length) return null;
+                      return (
+                        <div key={p.passengerId} className="addon-pax-row">
+                          <span className="addon-pax-name">{p.firstName} {p.lastName}</span>
+                          <div className="addon-tags">
+                            {list.map(a => (
+                              <span key={a.id} className="addon-tag">
+                                {a.icon} {a.name} — ₹{a.price}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* ACTIONS */}
                 <div className="card-actions">
-                  <button className="print-btn" onClick={() => handlePrint(payment, booking)}>🖨 Download Ticket</button>
+                  <button className="print-btn" onClick={() => handlePrint(payment, booking, passengers[payment.bookingId])}>🖨 Download Ticket</button>
                   {payment.status === 'PAID' && (
                     <button className="cancel-btn" onClick={() => handleRefund(payment.bookingId)}>Cancel & Refund</button>
-                  )}
-                  {payment.status === 'REFUNDED' && (
-                    <button className="rebook-btn" onClick={() => handleRebook(payment.bookingId)}>↩ Rebook This Route</button>
                   )}
                 </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { airlineApi } from '../../api/api';
+import { airlineApi, paymentApi } from '../../api/api';
 import './AdminDashboard.css';
 
 // ── Country flag helper ───────────────────────────────────────────────────────
@@ -67,6 +67,10 @@ export default function AdminDashboard() {
   const [airports, setAirports] = useState([]);
   const [loading, setLoading]   = useState(true);
 
+  const [payments, setPayments]             = useState([]);
+  const [paymentStatus, setPaymentStatus]   = useState('PAID');
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+
   // toasts
   const [toasts, setToasts] = useState([]);
   function addToast(msg, type = 'success') {
@@ -100,6 +104,15 @@ export default function AdminDashboard() {
       setAirports(ap.data);
     } catch { addToast('Could not load data', 'error'); }
     finally { setLoading(false); }
+  }
+
+  async function fetchPayments(status) {
+    setPaymentsLoading(true);
+    try {
+      const res = await paymentApi.getByStatus(status);
+      setPayments(res.data);
+    } catch { addToast('Could not load payments', 'error'); }
+    finally { setPaymentsLoading(false); }
   }
 
   async function handleAddAirline(e) {
@@ -217,9 +230,13 @@ export default function AdminDashboard() {
 
         {/* TABS */}
         <div className="admin-tabs">
-          {['airlines','add-airline','airports','add-airport'].map(t => (
-            <button key={t} className={tab === t ? 'tab active' : 'tab'} onClick={() => setTab(t)}>
-              {t === 'airlines' ? 'Airlines' : t === 'add-airline' ? '+ Add Airline' : t === 'airports' ? 'Airports' : '+ Add Airport'}
+          {['airlines','add-airline','airports','add-airport','payments'].map(t => (
+            <button key={t} className={tab === t ? 'tab active' : 'tab'}
+              onClick={() => { setTab(t); if (t === 'payments') fetchPayments(paymentStatus); }}
+            >
+              {t === 'airlines' ? 'Airlines' : t === 'add-airline' ? '+ Add Airline'
+                : t === 'airports' ? 'Airports' : t === 'add-airport' ? '+ Add Airport'
+                : '💳 Payments'}
             </button>
           ))}
         </div>
@@ -397,6 +414,63 @@ export default function AdminDashboard() {
                 <button type="submit" className="submit-btn">Add Airport</button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* PAYMENTS */}
+        {tab === 'payments' && (
+          <div className="dashboard-card">
+            <div className="card-header">
+              <h2>Payment Dashboard</h2>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <select
+                  className="sort-select"
+                  value={paymentStatus}
+                  onChange={e => { setPaymentStatus(e.target.value); fetchPayments(e.target.value); }}
+                >
+                  <option value="PAID">Paid</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="FAILED">Failed</option>
+                  <option value="REFUNDED">Refunded</option>
+                </select>
+                <span>{payments.length} records</span>
+              </div>
+            </div>
+            {paymentsLoading ? (
+              <div className="empty-small">Loading payments...</div>
+            ) : payments.length === 0 ? (
+              <div className="empty-small">No {paymentStatus.toLowerCase()} payments found.</div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Payment ID</th><th>Booking ID</th><th>User</th>
+                      <th>Amount</th><th>Mode</th><th>Status</th><th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.map(p => (
+                      <tr key={p.paymentId}>
+                        <td><span className="iata-code">#{p.paymentId}</span></td>
+                        <td>#{p.bookingId}</td>
+                        <td>{p.userEmail}</td>
+                        <td><strong style={{ color: '#93c5fd' }}>₹{p.amount?.toLocaleString()}</strong></td>
+                        <td>{p.paymentMode}</td>
+                        <td>
+                          <span className={`status-badge ${
+                            p.status === 'PAID' ? 'success'
+                            : p.status === 'REFUNDED' ? 'warning'
+                            : p.status === 'FAILED' ? 'danger' : 'info'
+                          }`}>{p.status}</span>
+                        </td>
+                        <td>{p.paidAt ? new Date(p.paidAt).toLocaleDateString('en-IN') : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 

@@ -16,6 +16,7 @@ import SeatSelection from './pages/passenger/SeatSelection';
 import PaymentPage from './pages/passenger/PaymentPage';
 import BookingConfirm from './pages/passenger/BookingConfirm';
 import MyBookings from './pages/passenger/MyBookings';
+import ProfilePage from './pages/passenger/ProfilePage';
 
 // Staff pages
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -30,12 +31,12 @@ export default function App() {
         <Navbar />
         <Routes>
 
-          {/* Public Routes - login ke bina access */}
+          {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Passenger Routes - login ke baad */}
+          {/* Passenger Routes */}
           <Route path="/seats/:flightId" element={
             <ProtectedRoute><SeatSelection /></ProtectedRoute>
           } />
@@ -48,18 +49,21 @@ export default function App() {
           <Route path="/my-bookings" element={
             <ProtectedRoute><MyBookings /></ProtectedRoute>
           } />
+          <Route path="/profile" element={
+            <ProtectedRoute><ProfilePage /></ProtectedRoute>
+          } />
 
-          {/* Staff Routes - sirf AIRLINE_STAFF */}
+          {/* Staff Routes */}
           <Route path="/staff" element={
             <RoleRoute role="AIRLINE_STAFF"><StaffDashboard /></RoleRoute>
           } />
 
-          {/* Admin Routes - sirf ADMIN */}
+          {/* Admin Routes */}
           <Route path="/admin" element={
             <RoleRoute role="ADMIN"><AdminDashboard /></RoleRoute>
           } />
 
-          {/* 404 - koi page nahi mila */}
+          {/* 404 */}
           <Route path="*" element={
             <div style={{ textAlign: 'center', padding: '100px 20px' }}>
               <h2>404 - Page Not Found</h2>

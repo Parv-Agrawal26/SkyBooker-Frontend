@@ -55,6 +55,10 @@ export default function Navbar() {
                   : 'My Bookings'}
               </Link>
 
+              {userRole !== 'ADMIN' && userRole !== 'AIRLINE_STAFF' && (
+                <Link to="/profile" onClick={() => setMenuOpen(false)}>Profile</Link>
+              )}
+
               <div className="navbar-user">
                 <div className="user-avatar">
                   {userEmail?.charAt(0).toUpperCase()}

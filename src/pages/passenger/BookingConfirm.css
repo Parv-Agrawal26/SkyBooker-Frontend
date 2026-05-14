@@ -76,7 +76,7 @@ input, select { font-family: 'DM Sans', sans-serif; }
   box-shadow: 0 20px 60px rgba(16, 185, 129, 0.12);
   padding: 48px 40px;
   width: 100%;
-  max-width: 500px;
+  max-width: 620px;
   text-align: center;
 }
 
@@ -158,4 +158,179 @@ input, select { font-family: 'DM Sans', sans-serif; }
   width: 100%;
   padding: 14px;
   font-size: 15px;
+}
+
+/* ITINERARY */
+
+.itinerary-block {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid #bbf7d0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.itinerary-airline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.airline-icon { font-size: 1.1rem; }
+
+.itinerary-route {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.itin-city h2 {
+  font-size: 1.6rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.itin-city span {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-light);
+}
+
+.itin-city strong {
+  display: block;
+  font-size: 1rem;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.itin-city.right { text-align: right; }
+
+.itin-line {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #16a34a;
+  font-size: 1rem;
+}
+
+.itin-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+}
+
+.itin-dash {
+  flex: 1;
+  height: 2px;
+  background: #bbf7d0;
+}
+
+/* PASSENGERS */
+
+.passengers-block {
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.passengers-block h4 {
+  font-size: 13px;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.pax-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.pax-row:last-child { border-bottom: none; }
+
+.pax-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pax-info { flex: 1; }
+.pax-info strong { display: block; font-size: 14px; }
+.pax-info span   { font-size: 12px; color: var(--text-light); }
+
+.pax-seat {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ROUND TRIP PROMPT */
+
+.rt-prompt {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1px solid #bfdbfe;
+  text-align: left;
+}
+
+.rt-prompt-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.rt-prompt strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #1e3a5f;
+  margin-bottom: 4px;
+}
+
+.rt-prompt p {
+  font-size: 0.82rem;
+  color: #3b82f6;
+  margin: 0;
+}
+
+.rt-prompt-btn {
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
 }

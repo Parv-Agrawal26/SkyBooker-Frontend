@@ -336,6 +336,16 @@ body {
   color: #fca5a5;
 }
 
+.status-badge.warning {
+  background: rgba(245,158,11,0.12);
+  color: #fcd34d;
+}
+
+.status-badge.info {
+  background: rgba(59,130,246,0.12);
+  color: #93c5fd;
+}
+
 /* TABLE CONTROLS */
 
 .table-controls {

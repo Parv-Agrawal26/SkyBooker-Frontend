@@ -262,7 +262,7 @@ body {
   margin-top: 34px;
 
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
 
   gap: 18px;
 }
@@ -489,6 +489,48 @@ body {
   color: #6ee7b7;
 }
 
+/* ADDONS */
+
+.addons-box {
+  margin-top: 20px;
+  padding: 18px 22px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.addons-box small {
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.addon-pax-row {
+  margin-bottom: 10px;
+}
+
+.addon-pax-name {
+  display: block;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+}
+
+.addon-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.addon-tag {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(99,102,241,0.12);
+  border: 1px solid rgba(99,102,241,0.2);
+  color: #a5b4fc;
+  font-size: 0.8rem;
+}
+
 /* ALERT */
 
 .alert-success {
@@ -555,7 +597,7 @@ body {
   }
 
   .booking-info-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .hero-content h1 {

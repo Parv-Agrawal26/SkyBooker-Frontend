@@ -263,6 +263,82 @@ body {
   line-height: 1.6;
 }
 
+/* RAZORPAY METHOD BADGES */
+
+.razorpay-methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.razorpay-method-badge {
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #94a3b8;
+  font-size: 0.88rem;
+}
+
+/* HOLD TIMER */
+
+.hold-timer {
+  margin-top: 24px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.25);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #93c5fd;
+}
+
+.hold-timer span { font-size: 1.4rem; }
+.hold-timer strong { display: block; font-size: 1rem; }
+.hold-timer p { font-size: 0.82rem; color: #64748b; margin-top: 2px; }
+
+.hold-timer.urgent {
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.3);
+  color: #fca5a5;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+
+/* PASSENGER WARNING */
+
+.pax-warning {
+  margin-top: 18px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.25);
+  color: #fcd34d;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pax-warning button {
+  align-self: flex-start;
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(245,158,11,0.3);
+  background: rgba(245,158,11,0.1);
+  color: #fcd34d;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.pax-warning button:hover { background: rgba(245,158,11,0.2); }
+
 /* SUMMARY */
 
 .summary-card {

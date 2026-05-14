@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { flightApi, seatApi } from '../../api/api';
+import { flightApi, seatApi, passengerApi, paymentApi } from '../../api/api';
 import './StaffDashboard.css';
 
 const todayStr = new Date().toISOString().split('T')[0];
@@ -19,6 +19,24 @@ export default function StaffDashboard() {
   const [expandedFlightId, setExpandedFlightId] = useState(null);
   const [seatsMap, setSeatsMap] = useState({});
   const [seatsLoading, setSeatsLoading] = useState(false);
+
+  // Flight passengers tab
+  const [selectedFlightId, setSelectedFlightId] = useState('');
+  const [flightPassengers, setFlightPassengers] = useState([]);
+  const [flightPaxLoading, setFlightPaxLoading] = useState(false);
+  const [flightRevenue, setFlightRevenue] = useState(null);
+  const [statusUpdating, setStatusUpdating] = useState({});
+
+  // Passenger search state
+  const [paxSearchType, setPaxSearchType] = useState('ticket');
+  const [paxSearchQuery, setPaxSearchQuery] = useState('');
+  const [paxResult, setPaxResult] = useState(null);
+  const [paxError, setPaxError] = useState('');
+  const [paxLoading, setPaxLoading] = useState(false);
+  const [bookingPassengers, setBookingPassengers] = useState([]);
+  const [bookingIdInput, setBookingIdInput] = useState('');
+  const [editingPassenger, setEditingPassenger] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   const [flightForm, setFlightForm] = useState({
     flightNumber: '', airline: '', source: '', destination: '',
@@ -42,6 +60,8 @@ export default function StaffDashboard() {
 
   const fetchFlights = useCallback(async () => {
     setLoading(true);
+    setSeatsMap({});  // clear seat cache so re-expanding fetches fresh data
+    setExpandedFlightId(null);
     try {
       const res = await flightApi.getAll();
       setFlights(res.data);
@@ -100,9 +120,14 @@ export default function StaffDashboard() {
     setError(''); setMessage('');
     try {
       await seatApi.addSeat({
-        ...seatForm,
-        flightId: parseInt(seatForm.flightId),
-        row: parseInt(seatForm.row),
+        flightId:        parseInt(seatForm.flightId),
+        seatNumber:      seatForm.seatNumber,
+        seatClass:       seatForm.seatClass,
+        row:             parseInt(seatForm.row),
+        column:          seatForm.column,
+        window:          seatForm.isWindow,
+        aisle:           seatForm.isAisle,
+        hasExtraLegroom: seatForm.hasExtraLegroom,
         priceMultiplier: parseFloat(seatForm.priceMultiplier),
       });
       setMessage('Seat added successfully!');
@@ -113,6 +138,83 @@ export default function StaffDashboard() {
       });
     } catch (err) {
       setError(err.response?.data?.message || 'Could not add seat');
+    }
+  }
+
+  async function handlePassengerSearch(e) {
+    e.preventDefault();
+    setPaxError(''); setPaxResult(null);
+    setPaxLoading(true);
+    try {
+      let res;
+      if (paxSearchType === 'ticket')   res = await passengerApi.getByTicket(paxSearchQuery);
+      if (paxSearchType === 'passport') res = await passengerApi.getByPassport(paxSearchQuery);
+      setPaxResult(res.data);
+    } catch {
+      setPaxError('No passenger found.');
+    } finally {
+      setPaxLoading(false);
+    }
+  }
+
+  async function handleLoadBookingPassengers(e) {
+    e.preventDefault();
+    setPaxError('');
+    setPaxResult(null);
+    try {
+      const res = await passengerApi.getByBooking(bookingIdInput);
+      setBookingPassengers(res.data);
+      if (res.data.length === 0) setPaxError('No passengers found for this booking.');
+    } catch {
+      setPaxError('Could not load passengers for this booking.');
+    }
+  }
+
+  async function handleUpdatePassenger(e) {
+    e.preventDefault();
+    try {
+      await passengerApi.updatePassenger(editingPassenger.passengerId, {
+        firstName:      editForm.firstName,
+        lastName:       editForm.lastName,
+        passportNumber: editForm.passportNumber,
+        nationality:    editForm.nationality,
+        gender:         editForm.gender,
+        passengerType:  editForm.passengerType,
+        // preserve existing read-only fields
+        bookingId:      editingPassenger.bookingId,
+        title:          editingPassenger.title,
+        dateOfBirth:    editingPassenger.dateOfBirth,
+        passportExpiry: editingPassenger.passportExpiry,
+      });
+      setBookingPassengers(p => p.map(x =>
+        x.passengerId === editingPassenger.passengerId ? { ...x, ...editForm } : x
+      ));
+      setEditingPassenger(null);
+      setMessage('Passenger updated.');
+    } catch {
+      setError('Could not update passenger.');
+    }
+  }
+
+  async function handleDeletePassenger(id) {
+    if (!window.confirm('Remove this passenger from the booking?')) return;
+    try {
+      await passengerApi.deletePassenger(id);
+      setBookingPassengers(p => p.filter(x => x.passengerId !== id));
+      setMessage('Passenger removed.');
+    } catch {
+      setError('Could not remove passenger.');
+    }
+  }
+
+  async function handleDeleteByBooking(bookingId) {
+    if (!window.confirm(`Remove ALL passengers for booking #${bookingId}? This cannot be undone.`)) return;
+    try {
+      await passengerApi.deleteByBooking(bookingId);
+      setBookingPassengers([]);
+      setMessage(`All passengers for booking #${bookingId} removed.`);
+    } catch {
+      setError('Could not remove passengers.');
     }
   }
 
@@ -165,6 +267,42 @@ export default function StaffDashboard() {
       return sortAsc ? da.localeCompare(db) : db.localeCompare(da);
     });
 
+  async function handleUpdateStatus(flightId, status) {
+    setStatusUpdating(prev => ({ ...prev, [flightId]: true }));
+    try {
+      const res = await flightApi.updateStatus(flightId, status);
+      setFlights(prev => prev.map(f => f.id === flightId ? { ...f, status: res.data.status } : f));
+      setMessage(`Flight #${flightId} status updated to ${status}`);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not update status');
+    } finally {
+      setStatusUpdating(prev => ({ ...prev, [flightId]: false }));
+    }
+  }
+
+  async function handleLoadFlightPassengers() {
+    if (!selectedFlightId) return;
+    setFlightPaxLoading(true);
+    setFlightPassengers([]);
+    setFlightRevenue(null);
+    try {
+      const res = await flightApi.getPassengers(selectedFlightId);
+      setFlightPassengers(res.data);
+      // collect unique booking IDs then fetch revenue
+      const bookingIds = [...new Set(res.data.map(p => Number(p.bookingId)).filter(Boolean))];
+      if (bookingIds.length > 0) {
+        const rev = await paymentApi.getRevenueForBookings(bookingIds);
+        setFlightRevenue(rev.data);
+      } else {
+        setFlightRevenue(0);
+      }
+    } catch {
+      setError('Could not load passengers for this flight.');
+    } finally {
+      setFlightPaxLoading(false);
+    }
+  }
+
   const totalAvailable = flights.reduce((acc, f) => acc + (f.availableSeats || 0), 0);
   const totalBooked = flights.reduce((acc, f) => acc + ((f.totalSeats || 0) - (f.availableSeats || 0)), 0);
 
@@ -211,6 +349,12 @@ export default function StaffDashboard() {
           <button className={tab === 'add-seat' ? 'tab active' : 'tab'} onClick={() => setTab('add-seat')}>
             + Add Seats
           </button>
+          <button className={tab === 'passengers' ? 'tab active' : 'tab'} onClick={() => setTab('passengers')}>
+            👥 Passengers
+          </button>
+          <button className={tab === 'flight-passengers' ? 'tab active' : 'tab'} onClick={() => setTab('flight-passengers')}>
+            ✈ Flight Passengers
+          </button>
         </div>
 
         {/* FLIGHTS TAB */}
@@ -249,13 +393,17 @@ export default function StaffDashboard() {
                       <th>Route</th>
                       <th>Departure</th>
                       <th>Arrival</th>
-                      <th>Seats</th>
+                      <th>Occupancy</th>
                       <th>Price</th>
-                      <th>Actions</th>
+                      <th>Status / Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredFlights.map(flight => (
+                    {filteredFlights.map(flight => {
+                      const booked = (flight.totalSeats || 0) - (flight.availableSeats || 0);
+                      const occupancy = flight.totalSeats > 0 ? Math.round(booked / flight.totalSeats * 100) : 0;
+                      const statusColors = { ON_TIME: '#10b981', DELAYED: '#f59e0b', CANCELLED: '#ef4444' };
+                      return (
                       <React.Fragment key={flight.id}>
                         <tr>
                           <td><span className="flight-id">#{flight.id}</span></td>
@@ -288,18 +436,40 @@ export default function StaffDashboard() {
                             <small>{formatArrival(flight)}</small>
                           </td>
                           <td>
-                            <span className={flight.availableSeats < 10 ? 'seat-badge low' : 'seat-badge ok'}>
-                              {flight.availableSeats}
-                            </span>
+                            <div style={{ minWidth: 90 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
+                                <span>{booked}/{flight.totalSeats}</span>
+                                <span>{occupancy}%</span>
+                              </div>
+                              <div style={{ background: '#e5e7eb', borderRadius: 4, height: 6 }}>
+                                <div style={{ width: `${occupancy}%`, background: occupancy > 80 ? '#ef4444' : '#10b981', height: 6, borderRadius: 4, transition: 'width 0.3s' }} />
+                              </div>
+                            </div>
                           </td>
                           <td><strong className="price">₹{flight.price?.toLocaleString()}</strong></td>
                           <td>
-                            <button
-                              className="view-seats-btn"
-                              onClick={() => toggleSeats(flight.id)}
-                            >
-                              {expandedFlightId === flight.id ? 'Hide Seats' : 'View Seats'}
-                            </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                {['ON_TIME', 'DELAYED', 'CANCELLED'].map(s => (
+                                  <button
+                                    key={s}
+                                    disabled={statusUpdating[flight.id] || flight.status === s}
+                                    onClick={() => handleUpdateStatus(flight.id, s)}
+                                    style={{
+                                      fontSize: 10, padding: '2px 6px', borderRadius: 4, border: 'none', cursor: 'pointer',
+                                      background: flight.status === s ? statusColors[s] : '#e5e7eb',
+                                      color: flight.status === s ? '#fff' : '#374151', fontWeight: flight.status === s ? 700 : 400,
+                                    }}
+                                  >{s.replace('_', ' ')}</button>
+                                ))}
+                              </div>
+                              <button
+                                className="view-seats-btn"
+                                onClick={() => toggleSeats(flight.id)}
+                              >
+                                {expandedFlightId === flight.id ? 'Hide Seats' : 'View Seats'}
+                              </button>
+                            </div>
                           </td>
                         </tr>
 
@@ -318,7 +488,7 @@ export default function StaffDashboard() {
                                       <span
                                         key={seat.id}
                                         className={`seat-chip ${seat.status?.toLowerCase() || 'available'}`}
-                                        title={`${seat.seatClass} | ${seat.status}${seat.isWindow ? ' | Window' : ''}${seat.isAisle ? ' | Aisle' : ''}${seat.hasExtraLegroom ? ' | Extra Legroom' : ''}`}
+                                        title={`${seat.seatClass} | ${seat.status}${seat.window ? ' | Window' : ''}${seat.aisle ? ' | Aisle' : ''}${seat.hasExtraLegroom ? ' | Extra Legroom' : ''}`}
                                       >
                                         {seat.seatNumber}
                                       </span>
@@ -327,15 +497,17 @@ export default function StaffDashboard() {
                                 )}
                                 <div className="seat-legend">
                                   <span className="seat-chip available">Available</span>
-                                  <span className="seat-chip booked">Booked</span>
+                                  <span className="seat-chip confirmed">Confirmed</span>
                                   <span className="seat-chip held">Held</span>
+                                  <span className="seat-chip booked">Booked/Other</span>
                                 </div>
                               </div>
                             </td>
                           </tr>
                         )}
                       </React.Fragment>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -476,6 +648,222 @@ export default function StaffDashboard() {
               </div>
               <button type="submit" className="submit-btn">Add Seat</button>
             </form>
+          </div>
+        )}
+
+        {/* FLIGHT PASSENGERS TAB */}
+        {tab === 'flight-passengers' && (
+          <div className="dashboard-card">
+            <div className="card-header"><h2>Passengers by Flight</h2></div>
+            <div className="pax-section">
+              <div className="pax-search-form">
+                <select value={selectedFlightId} onChange={e => setSelectedFlightId(e.target.value)}>
+                  <option value="">— Select a flight —</option>
+                  {flights.map(f => (
+                    <option key={f.id} value={f.id}>
+                      #{f.id} · {f.flightNumber} · {f.source} → {f.destination} ({f.departureDate})
+                    </option>
+                  ))}
+                </select>
+                <button className="submit-btn" onClick={handleLoadFlightPassengers} disabled={!selectedFlightId || flightPaxLoading}>
+                  {flightPaxLoading ? 'Loading...' : 'Load Passengers'}
+                </button>
+
+              </div>
+
+              {flightRevenue !== null && (
+                <div style={{ display: 'flex', gap: 16, margin: '16px 0', flexWrap: 'wrap' }}>
+                  <div className="stat-card" style={{ flex: 1, minWidth: 140 }}>
+                    <div className="stat-icon">👥</div>
+                    <div><h2>{flightPassengers.length}</h2><span>Passengers</span></div>
+                  </div>
+                  <div className="stat-card" style={{ flex: 1, minWidth: 140 }}>
+                    <div className="stat-icon booked">💰</div>
+                    <div><h2>₹{flightRevenue?.toLocaleString()}</h2><span>Revenue</span></div>
+                  </div>
+                  {(() => {
+                    const fl = flights.find(f => String(f.id) === String(selectedFlightId));
+                    const occ = fl && fl.totalSeats > 0
+                      ? Math.round(((fl.totalSeats - fl.availableSeats) / fl.totalSeats) * 100) : 0;
+                    return (
+                      <div className="stat-card" style={{ flex: 1, minWidth: 140 }}>
+                        <div className="stat-icon seats">📊</div>
+                        <div>
+                          <h2>{occ}%</h2>
+                          <span>Occupancy</span>
+                          <div style={{ background: '#e5e7eb', borderRadius: 4, height: 8, marginTop: 4 }}>
+                            <div style={{ width: `${occ}%`, background: occ > 80 ? '#ef4444' : '#10b981', height: 8, borderRadius: 4 }} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {flightPassengers.length > 0 && (
+                <div className="table-wrapper">
+                  <table className="staff-table">
+                    <thead>
+                      <tr><th>Name</th><th>Ticket</th><th>Seat</th><th>Type</th><th>Nationality</th><th>Add-ons</th></tr>
+                    </thead>
+                    <tbody>
+                      {flightPassengers.map(p => {
+                        let addons = [];
+                        try { addons = JSON.parse(p.addons || '[]'); } catch { addons = []; }
+                        return (
+                          <tr key={p.passengerId}>
+                            <td>{p.title} {p.firstName} {p.lastName}</td>
+                            <td>{p.ticketNumber || '—'}</td>
+                            <td>{p.seatNumber || '—'}</td>
+                            <td>{p.passengerType || '—'}</td>
+                            <td>{p.nationality || '—'}</td>
+                            <td>
+                              {addons.length > 0
+                                ? addons.map((a, i) => <span key={i} title={`₹${a.price}`} style={{ marginRight: 4 }}>{a.icon} {a.name}</span>)
+                                : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {flightPassengers.length === 0 && flightRevenue !== null && (
+                <div className="empty-small">No passengers found for this flight.</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* PASSENGERS TAB */}
+        {tab === 'passengers' && (
+          <div className="dashboard-card">
+            <div className="card-header"><h2>Passenger Management</h2></div>
+
+            {/* Search by ticket / passport */}
+            <div className="pax-section">
+              <h3>Lookup Passenger</h3>
+              <form onSubmit={handlePassengerSearch} className="pax-search-form">
+                <select value={paxSearchType} onChange={e => setPaxSearchType(e.target.value)}>
+                  <option value="ticket">Ticket Number</option>
+                  <option value="passport">Passport Number</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder={paxSearchType === 'ticket' ? 'TKT-XXXXXXXX' : 'Passport number'}
+                  value={paxSearchQuery}
+                  onChange={e => setPaxSearchQuery(e.target.value)}
+                  required
+                />
+                <button type="submit" className="submit-btn" disabled={paxLoading}>
+                  {paxLoading ? 'Searching...' : 'Search'}
+                </button>
+              </form>
+              {paxError && <div className="alert-error">{paxError}</div>}
+              {paxResult && (
+                <div className="pax-result-card">
+                  <strong>{paxResult.firstName} {paxResult.lastName}</strong>
+                  <span>Ticket: {paxResult.ticketNumber}</span>
+                  <span>Passport: {paxResult.passportNumber}</span>
+                  <span>Seat: {paxResult.seatNumber || 'Not assigned'}</span>
+                  <span>Booking #{paxResult.bookingId}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Passengers by booking */}
+            <div className="pax-section">
+              <h3>Passengers by Booking</h3>
+              <form onSubmit={handleLoadBookingPassengers} className="pax-search-form">
+                <input
+                  type="number"
+                  placeholder="Booking ID"
+                  value={bookingIdInput}
+                  onChange={e => setBookingIdInput(e.target.value)}
+                  required
+                />
+                <button type="submit" className="submit-btn">Load</button>
+              </form>
+              {bookingPassengers.length > 0 && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+                    <button className="cancel-btn-sm" onClick={() => handleDeleteByBooking(bookingIdInput)}>
+                      🗑 Remove All Passengers
+                    </button>
+                  </div>
+                  <div className="table-wrapper">
+                    <table className="staff-table">
+                      <thead>
+                        <tr><th>Name</th><th>Ticket</th><th>Passport</th><th>Nationality</th><th>Type</th><th>Seat</th><th>Actions</th></tr>
+                      </thead>
+                      <tbody>
+                        {bookingPassengers.map(p => (
+                          <tr key={p.passengerId}>
+                            <td>{p.title} {p.firstName} {p.lastName}</td>
+                            <td>{p.ticketNumber || '—'}</td>
+                            <td>{p.passportNumber || '—'}</td>
+                            <td>{p.nationality || '—'}</td>
+                            <td>{p.passengerType || '—'}</td>
+                            <td>{p.seatNumber || '—'}</td>
+                            <td>
+                              <button className="view-seats-btn" onClick={() => {
+                                setEditingPassenger(p);
+                                setEditForm({
+                                  firstName:      p.firstName,
+                                  lastName:       p.lastName,
+                                  passportNumber: p.passportNumber,
+                                  nationality:    p.nationality,
+                                  gender:         p.gender,
+                                  passengerType:  p.passengerType,
+                                });
+                              }}>Edit</button>
+                              {' '}
+                              <button className="cancel-btn-sm" onClick={() => handleDeletePassenger(p.passengerId)}>Remove</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Edit passenger modal */}
+            {editingPassenger && (
+              <div className="modal-overlay">
+                <div className="modal-box">
+                  <h3>Edit Passenger</h3>
+                  <form onSubmit={handleUpdatePassenger}>
+                    <div className="form-grid">
+                      {[
+                        { key: 'firstName',      label: 'First Name' },
+                        { key: 'lastName',       label: 'Last Name' },
+                        { key: 'passportNumber', label: 'Passport Number' },
+                        { key: 'nationality',    label: 'Nationality' },
+                        { key: 'gender',         label: 'Gender' },
+                        { key: 'passengerType',  label: 'Passenger Type' },
+                      ].map(f => (
+                        <div className="form-group" key={f.key}>
+                          <label>{f.label}</label>
+                          <input
+                            type="text"
+                            value={editForm[f.key] || ''}
+                            onChange={e => setEditForm(p => ({ ...p, [f.key]: e.target.value }))}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="modal-actions">
+                      <button type="button" className="modal-cancel" onClick={() => setEditingPassenger(null)}>Cancel</button>
+                      <button type="submit" className="modal-confirm">Save</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

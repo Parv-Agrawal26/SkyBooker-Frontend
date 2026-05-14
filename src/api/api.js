@@ -4,7 +4,7 @@ const GATEWAY_URL = 'http://localhost:8080';
 
 function authHeader() {
   const token = localStorage.getItem('token');
-  return { Authorization: `Bearer ${token}` };
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 axios.interceptors.response.use(
@@ -34,6 +34,12 @@ export const flightApi = {
     axios.put(`${GATEWAY_URL}/flights/${flightId}/reduce-seats`, null, {
       params: { seats }, headers: authHeader(),
     }),
+  updateStatus: (flightId, status) =>
+    axios.put(`${GATEWAY_URL}/flights/${flightId}/status`, null, {
+      params: { status }, headers: authHeader(),
+    }),
+  getPassengers: (flightId) =>
+    axios.get(`${GATEWAY_URL}/passengers/flight/${flightId}`, { headers: authHeader() }),
 };
 
 export const seatApi = {
@@ -41,10 +47,16 @@ export const seatApi = {
     axios.get(`${GATEWAY_URL}/seats/flight/${flightId}`, { headers: authHeader() }),
   getAvailableSeats: (flightId) =>
     axios.get(`${GATEWAY_URL}/seats/flight/${flightId}/available`, { headers: authHeader() }),
+  getSeatsByClass: (flightId, seatClass) =>
+    axios.get(`${GATEWAY_URL}/seats/flight/${flightId}/class/${seatClass}`, { headers: authHeader() }),
+  getSeatCount: (flightId) =>
+    axios.get(`${GATEWAY_URL}/seats/flight/${flightId}/count`, { headers: authHeader() }),
   holdSeat:    (flightId, seatNumber) =>
     axios.put(`${GATEWAY_URL}/seats/flight/${flightId}/hold/${seatNumber}`, null, { headers: authHeader() }),
   confirmSeat: (flightId, seatNumber) =>
     axios.put(`${GATEWAY_URL}/seats/flight/${flightId}/confirm/${seatNumber}`, null, { headers: authHeader() }),
+  releaseSeat: (flightId, seatNumber) =>
+    axios.put(`${GATEWAY_URL}/seats/flight/${flightId}/release/${seatNumber}`, null, { headers: authHeader() }),
   addSeat:     (data) => axios.post(`${GATEWAY_URL}/seats`, data, { headers: authHeader() }),
 };
 
@@ -52,22 +64,52 @@ export const bookingApi = {
   createBooking:  (data) => axios.post(`${GATEWAY_URL}/bookings`, data, { headers: authHeader() }),
   getByBookingId: (bookingId) =>
     axios.get(`${GATEWAY_URL}/bookings/${bookingId}`, { headers: authHeader() }),
+  cancelBooking:  (bookingId) =>
+    axios.delete(`${GATEWAY_URL}/bookings/${bookingId}`, { headers: authHeader() }),
 };
 
 export const passengerApi = {
-  addPassenger: (data) => axios.post(`${GATEWAY_URL}/passengers`, data, { headers: authHeader() }),
-  getByBooking: (bookingId) =>
+  addPassenger:    (data) => axios.post(`${GATEWAY_URL}/passengers`, data, { headers: authHeader() }),
+  getByBooking:    (bookingId) =>
     axios.get(`${GATEWAY_URL}/passengers/booking/${bookingId}`, { headers: authHeader() }),
+  updatePassenger: (id, data) =>
+    axios.put(`${GATEWAY_URL}/passengers/${id}`, data, { headers: authHeader() }),
+  deletePassenger: (id) =>
+    axios.delete(`${GATEWAY_URL}/passengers/${id}`, { headers: authHeader() }),
+  deleteByBooking: (bookingId) =>
+    axios.delete(`${GATEWAY_URL}/passengers/booking/${bookingId}`, { headers: authHeader() }),
+  getByTicket:     (ticketNumber) =>
+    axios.get(`${GATEWAY_URL}/passengers/ticket/${ticketNumber}`, { headers: authHeader() }),
+  getByPassport:   (passportNumber) =>
+    axios.get(`${GATEWAY_URL}/passengers/passport/${passportNumber}`, { headers: authHeader() }),
+  getCount:        (bookingId) =>
+    axios.get(`${GATEWAY_URL}/passengers/count/${bookingId}`, { headers: authHeader() }),
 };
 
 export const paymentApi = {
   pay:          (data) => axios.post(`${GATEWAY_URL}/payments`, data, { headers: authHeader() }),
+  createOrder:  (data) => axios.post(`${GATEWAY_URL}/payments/create-order`, data, { headers: authHeader() }),
+  verifyPayment:(data) => axios.post(`${GATEWAY_URL}/payments/verify`, data, { headers: authHeader() }),
   getByBooking: (bookingId) =>
     axios.get(`${GATEWAY_URL}/payments/booking/${bookingId}`, { headers: authHeader() }),
   getByUser:    (email) =>
     axios.get(`${GATEWAY_URL}/payments/user/${email}`, { headers: authHeader() }),
+  getByStatus:  (status) =>
+    axios.get(`${GATEWAY_URL}/payments/status/${status}`, { headers: authHeader() }),
   refund:       (bookingId) =>
     axios.post(`${GATEWAY_URL}/payments/refund/${bookingId}`, null, { headers: authHeader() }),
+  getRevenueForBookings: (bookingIds) =>
+    axios.post(`${GATEWAY_URL}/payments/bookings/total`, bookingIds, { headers: authHeader() }),
+};
+
+export const adminApi = {
+  backfillPassengerFlightIds: () =>
+    axios.post(`${GATEWAY_URL}/passengers/admin/backfill-flight-ids`, null, { headers: authHeader() }),
+};
+
+export const authProfileApi = {
+  getProfile:   () => axios.get(`${GATEWAY_URL}/auth/profile`, { headers: authHeader() }),
+  updateProfile: (data) => axios.put(`${GATEWAY_URL}/auth/profile`, data, { headers: authHeader() }),
 };
 
 export const airlineApi = {

@@ -199,6 +199,11 @@ body {
   border-color: #3b82f6;
 }
 
+.flight-card-selected {
+  border-color: #10b981 !important;
+  background: linear-gradient(145deg, rgba(16,185,129,0.08), rgba(30,41,59,0.88)) !important;
+}
+
 .flight-left {
   flex: 1;
 }
@@ -427,14 +432,111 @@ body {
 
 .alert-error {
   padding: 18px 22px;
-
   border-radius: 18px;
-
   background: rgba(239,68,68,0.12);
-
   border: 1px solid rgba(239,68,68,0.2);
-
   color: #fca5a5;
+}
+
+/* ROUND TRIP STEPS */
+
+.rt-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 48px;
+  padding: 28px 32px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(15,23,42,0.96), rgba(30,41,59,0.9));
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.rt-step {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  opacity: 0.45;
+  transition: opacity 0.3s;
+}
+
+.rt-step.rt-step-active,
+.rt-step.rt-step-done {
+  opacity: 1;
+}
+
+.rt-step-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.rt-step.rt-step-active .rt-step-circle {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  border-color: transparent;
+  color: white;
+}
+
+.rt-step.rt-step-done .rt-step-circle {
+  background: linear-gradient(135deg, #059669, #10b981);
+  border-color: transparent;
+  color: white;
+}
+
+.rt-step div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rt-step strong {
+  font-size: 1rem;
+  color: #dbe4ff;
+}
+
+.rt-step span {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.rt-selected-label {
+  color: #6ee7b7 !important;
+  font-size: 0.82rem !important;
+}
+
+.rt-step-connector {
+  width: 60px;
+  height: 2px;
+  background: rgba(255,255,255,0.1);
+  flex-shrink: 0;
+  margin: 0 8px;
+}
+
+.back-to-outbound-btn {
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #dbe4ff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+  white-space: nowrap;
+}
+
+.back-to-outbound-btn:hover {
+  background: rgba(255,255,255,0.1);
 }
 
 .loading {

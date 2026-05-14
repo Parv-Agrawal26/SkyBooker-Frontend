@@ -1,9 +1,10 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { seatApi, bookingApi, passengerApi } from '../../api/api';
 import { useAuth } from '../../context/AuthContext';
 import './SeatSelection.css';
+
+const HOLD_MINUTES = 15;
 
 export default function SeatSelection() {
   const { flightId }       = useParams();
@@ -11,6 +12,11 @@ export default function SeatSelection() {
   const navigate           = useNavigate();
   const { userEmail }      = useAuth();
   const passengers         = parseInt(searchParams.get('passengers') || 1);
+  const returnFlightId     = searchParams.get('returnFlightId') || '';
+  const returnPrice        = searchParams.get('returnPrice') || '';
+  const returnSource       = searchParams.get('returnSource') || '';
+  const returnDest         = searchParams.get('returnDestination') || '';
+  const returnDate         = searchParams.get('returnDate') || '';
 
   const [step, setStep]               = useState(1);
   const [seats, setSeats]             = useState([]);
@@ -18,6 +24,10 @@ export default function SeatSelection() {
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState('');
   const [bookingId, setBookingId]     = useState(null);
+  const [holdTimeLeft, setHoldTimeLeft] = useState(null); // seconds remaining
+  const holdTimerRef = useRef(null);
+  const selectedSeatsRef = useRef([]);  // always up-to-date for cleanup
+  const stepRef = useRef(1);            // always up-to-date for cleanup
   const [addonsByPassenger, setAddonsByPassenger] = useState(
     Array(passengers).fill(null).map(() => ({}))
   );
@@ -33,6 +43,52 @@ export default function SeatSelection() {
 
   useEffect(() => { fetchSeats(); }, []);
 
+  // Keep refs in sync
+  useEffect(() => { selectedSeatsRef.current = selectedSeats; }, [selectedSeats]);
+  useEffect(() => { stepRef.current = step; }, [step]);
+
+  // Release all held seats (fire-and-forget)
+  const releaseHeldSeats = useCallback(() => {
+    selectedSeatsRef.current.forEach(seat => {
+      seatApi.releaseSeat(flightId, seat.seatNumber).catch(() => {});
+    });
+  }, [flightId]);
+
+  // Start 15-min hold countdown when first seat is held
+  function startHoldTimer() {
+    if (holdTimerRef.current) return; // already running
+    setHoldTimeLeft(HOLD_MINUTES * 60);
+    holdTimerRef.current = setInterval(() => {
+      setHoldTimeLeft(t => {
+        if (t <= 1) {
+          clearInterval(holdTimerRef.current);
+          holdTimerRef.current = null;
+          setError('Your seat hold has expired. Please reselect your seats.');
+          setSelectedSeats([]);
+          fetchSeats(); // refresh seat map
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+  }
+
+  // Release seats on unmount (back button, close tab, navigate away)
+  useEffect(() => {
+    function handleBeforeUnload(e) {
+      releaseHeldSeats();
+      e.preventDefault();
+      e.returnValue = '';
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      clearInterval(holdTimerRef.current);
+      // Only release if still on step 1 (not yet proceeded to payment)
+      if (stepRef.current === 1) releaseHeldSeats();
+    };
+  }, [releaseHeldSeats]);
+
   async function fetchSeats() {
     try {
       const res = await seatApi.getAvailableSeats(flightId);
@@ -44,7 +100,13 @@ export default function SeatSelection() {
     }
   }
 
-  const [tooltip, setTooltip] = useState(null); // { seat, x, y }
+  const [tooltip, setTooltip] = useState(null);
+
+  function formatHoldTime(secs) {
+    const m = String(Math.floor(secs / 60)).padStart(2, '0');
+    const s = String(secs % 60).padStart(2, '0');
+    return `${m}:${s}`;
+  }
 
   const CLASS_PRICES = {
     FIRST:    (parseFloat(searchParams.get('price') || 4500)) * 3,
@@ -58,6 +120,7 @@ export default function SeatSelection() {
     // Deselect a seat that is already selected (was held by us)
     if (selectedSeats.find(s => s.id === seat.id)) {
       if (!window.confirm(`Remove seat ${seat.seatNumber} from your selection?`)) return;
+      await seatApi.releaseSeat(flightId, seat.seatNumber).catch(() => {});
       setSelectedSeats(selectedSeats.filter(s => s.id !== seat.id));
       setSeats(seats.map(s => s.id === seat.id ? { ...s, status: 'AVAILABLE' } : s));
       return;
@@ -74,6 +137,7 @@ export default function SeatSelection() {
       await seatApi.holdSeat(flightId, seat.seatNumber);
       setSelectedSeats([...selectedSeats, seat]);
       setSeats(seats.map(s => s.id === seat.id ? { ...s, status: 'HELD' } : s));
+      startHoldTimer();
     } catch (err) {
       alert(err.response?.data?.message || 'Could not hold seat. Please try again.');
     }
@@ -126,6 +190,9 @@ export default function SeatSelection() {
     try {
       for (let i = 0; i < passengerForms.length; i++) {
         const f = passengerForms[i];
+        const addons = Object.values(addonsByPassenger[i] || {}).map(a => ({
+          id: a.id, name: a.name, icon: a.icon, price: a.price,
+        }));
         await passengerApi.addPassenger({
           bookingId:      bookingId.toString(),
           title:          f.title,
@@ -137,12 +204,22 @@ export default function SeatSelection() {
           passengerType:  f.passengerType,
           passportNumber: f.passportNumber || null,
           passportExpiry: f.passportExpiry || null,
+          addons:         addons.length > 0 ? JSON.stringify(addons) : null,
+          seatId:         selectedSeats[i]?.id || null,
+          seatNumber:     selectedSeats[i]?.seatNumber || null,
+          flightId:       parseInt(flightId),
         });
       }
       // navigate(`/payment/${bookingId}?amount=${calculateTotal()}`);
-      navigate(`/payment/${bookingId}?amount=${calculateTotal()}&flightId=${flightId}&seats=${selectedSeats.map(s=>s.seatNumber).join(',')}`);
+      navigate(`/payment/${bookingId}?amount=${calculateTotal()}&flightId=${flightId}&seats=${selectedSeats.map(s=>s.seatNumber).join(',')}&passengers=${passengers}${returnFlightId ? `&returnFlightId=${returnFlightId}&returnPrice=${returnPrice}&returnSource=${encodeURIComponent(returnSource)}&returnDestination=${encodeURIComponent(returnDest)}&returnDate=${returnDate}` : ''}`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save passenger details. Please try again.');
+      const msg = err.response?.data?.message || 'Failed to save passenger details. Please try again.';
+      setError(msg);
+      if (err.response?.status === 400 && msg.toLowerCase().includes('already booked')) {
+        setSelectedSeats([]);
+        setStep(1);
+        fetchSeats();
+      }
     }
   }
 
@@ -253,6 +330,13 @@ export default function SeatSelection() {
                   {' '}selected
                 </p>
               </div>
+
+              {holdTimeLeft !== null && (
+                <div className={`hold-countdown ${holdTimeLeft <= 120 ? 'urgent' : ''}`}>
+                  <span>⏱</span>
+                  <span>Seats held for <strong>{formatHoldTime(holdTimeLeft)}</strong></span>
+                </div>
+              )}
 
             </div>
 
@@ -655,12 +739,14 @@ function SeatClassSection({ label, cls, seatList, selectedSeats, aisleAfter, pri
 function SeatBox({ seat, selectedSeats, onClick, onMouseEnter, onMouseLeave }) {
   const isSelected = !!selectedSeats.find(s => s.id === seat.id);
   const cls = isSelected ? 'selected' : seat.status.toLowerCase();
+  const isClickable = isSelected || seat.status === 'AVAILABLE';
   return (
     <div
       className={`seat-box ${cls}`}
-      onClick={() => onClick(seat)}
+      onClick={() => isClickable && onClick(seat)}
       onMouseEnter={e => onMouseEnter(e, seat)}
       onMouseLeave={onMouseLeave}
+      style={!isClickable ? { cursor: 'not-allowed' } : {}}
     >
       {seat.seatNumber}
     </div>
