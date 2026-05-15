@@ -1,0 +1,605 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #050816;
+  font-family: 'Inter', sans-serif;
+  color: white;
+}
+
+.search-page {
+  min-height: 100vh;
+  background: #050816;
+}
+
+/* HERO */
+
+.search-hero {
+  position: relative;
+
+  padding: 120px 40px 80px;
+
+  background:
+    linear-gradient(
+      rgba(4, 8, 20, 0.78),
+      rgba(4, 8, 20, 0.92)
+    ),
+    url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=1600&auto=format&fit=crop');
+
+  background-size: cover;
+  background-position: center;
+}
+
+.search-hero-content {
+  max-width: 1350px;
+  margin: auto;
+}
+
+.route-badge {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 12px 20px;
+
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.08);
+
+  border: 1px solid rgba(255,255,255,0.1);
+
+  color: #dbe4ff;
+
+  margin-bottom: 26px;
+}
+
+.route-main h1 {
+  font-size: 4.5rem;
+  font-weight: 800;
+}
+
+.route-main h1 span {
+  color: #60a5fa;
+}
+
+.route-main p {
+  margin-top: 18px;
+
+  color: #cbd5e1;
+  font-size: 1.1rem;
+}
+
+.change-search-btn {
+  margin-top: 36px;
+
+  height: 56px;
+  padding: 0 28px;
+
+  border: none;
+  border-radius: 18px;
+
+  background: linear-gradient(
+    135deg,
+    #2563eb,
+    #4f46e5
+  );
+
+  color: white;
+  font-size: 0.96rem;
+  font-weight: 700;
+
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.change-search-btn:hover {
+  transform: translateY(-3px);
+}
+
+/* RESULTS */
+
+.results-container {
+  max-width: 1350px;
+  margin: auto;
+
+  padding: 60px 40px 100px;
+}
+
+.results-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+.results-topbar h2 {
+  font-size: 2.2rem;
+}
+
+.results-topbar p {
+  margin-top: 10px;
+  color: #94a3b8;
+}
+
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  flex-wrap: wrap;
+}
+
+.sort-bar span {
+  color: #94a3b8;
+}
+
+.sort-btn {
+  height: 48px;
+
+  padding: 0 22px;
+
+  border-radius: 14px;
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  background: rgba(255,255,255,0.05);
+
+  color: white;
+
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.sort-btn.active {
+  background: linear-gradient(
+    135deg,
+    #2563eb,
+    #4f46e5
+  );
+
+  border-color: transparent;
+}
+
+/* FLIGHT CARD */
+
+.flights-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.flight-card {
+  background: linear-gradient(
+    145deg,
+    rgba(15,23,42,0.94),
+    rgba(30,41,59,0.88)
+  );
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  border-radius: 30px;
+
+  padding: 34px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 40px;
+
+  transition: 0.3s ease;
+}
+
+.flight-card:hover {
+  transform: translateY(-6px);
+  border-color: #3b82f6;
+}
+
+.flight-card-selected {
+  border-color: #10b981 !important;
+  background: linear-gradient(145deg, rgba(16,185,129,0.08), rgba(30,41,59,0.88)) !important;
+}
+
+.flight-left {
+  flex: 1;
+}
+
+.airline-block {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+
+  margin-bottom: 36px;
+}
+
+.airline-logo {
+  width: 62px;
+  height: 62px;
+
+  border-radius: 20px;
+
+  background: linear-gradient(
+    135deg,
+    #2563eb,
+    #4f46e5
+  );
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 1.4rem;
+}
+
+.airline-block h3 {
+  font-size: 1.3rem;
+  margin-bottom: 6px;
+}
+
+.airline-block span {
+  color: #94a3b8;
+}
+
+.flight-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 24px;
+}
+
+.time-block h2 {
+  font-size: 2.3rem;
+}
+
+.time-block span {
+  margin-top: 10px;
+  display: block;
+
+  color: #94a3b8;
+}
+
+.timeline-center {
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.line {
+  flex: 1;
+  height: 2px;
+
+  background: rgba(255,255,255,0.12);
+}
+
+.plane-icon {
+  width: 42px;
+  height: 42px;
+
+  border-radius: 50%;
+
+  background: linear-gradient(
+    135deg,
+    #2563eb,
+    #4f46e5
+  );
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seat-info {
+  margin-top: 30px;
+}
+
+.low-seats,
+.good-seats {
+  padding: 10px 16px;
+
+  border-radius: 999px;
+
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.low-seats {
+  background: rgba(239,68,68,0.12);
+  color: #fca5a5;
+}
+
+.good-seats {
+  background: rgba(16,185,129,0.12);
+  color: #6ee7b7;
+}
+
+.flight-right {
+  width: 260px;
+}
+
+.price-card {
+  padding: 30px;
+
+  border-radius: 24px;
+
+  background: rgba(255,255,255,0.05);
+
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.price-card small {
+  color: #94a3b8;
+}
+
+.price-card h2 {
+  margin-top: 10px;
+  font-size: 2.2rem;
+}
+
+.price-card span {
+  display: block;
+  margin-top: 12px;
+
+  color: #cbd5e1;
+}
+
+.book-btn {
+  width: 100%;
+  height: 56px;
+
+  margin-top: 20px;
+
+  border: none;
+  border-radius: 18px;
+
+  background: linear-gradient(
+    135deg,
+    #2563eb,
+    #4f46e5
+  );
+
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.book-btn:hover {
+  transform: translateY(-3px);
+}
+
+.book-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* EMPTY */
+
+.no-flights {
+  text-align: center;
+
+  padding: 100px 40px;
+
+  border-radius: 34px;
+
+  background: rgba(255,255,255,0.04);
+
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.no-icon {
+  font-size: 4rem;
+  margin-bottom: 24px;
+}
+
+.no-flights h3 {
+  font-size: 2rem;
+}
+
+.no-flights p {
+  margin-top: 16px;
+  color: #94a3b8;
+}
+
+.retry-btn {
+  margin-top: 30px;
+
+  height: 54px;
+  padding: 0 28px;
+
+  border: none;
+  border-radius: 16px;
+
+  background: linear-gradient(
+    135deg,
+    #2563eb,
+    #4f46e5
+  );
+
+  color: white;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.alert-error {
+  padding: 18px 22px;
+  border-radius: 18px;
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.2);
+  color: #fca5a5;
+}
+
+/* ROUND TRIP STEPS */
+
+.rt-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 48px;
+  padding: 28px 32px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(15,23,42,0.96), rgba(30,41,59,0.9));
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.rt-step {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  opacity: 0.45;
+  transition: opacity 0.3s;
+}
+
+.rt-step.rt-step-active,
+.rt-step.rt-step-done {
+  opacity: 1;
+}
+
+.rt-step-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.rt-step.rt-step-active .rt-step-circle {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  border-color: transparent;
+  color: white;
+}
+
+.rt-step.rt-step-done .rt-step-circle {
+  background: linear-gradient(135deg, #059669, #10b981);
+  border-color: transparent;
+  color: white;
+}
+
+.rt-step div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rt-step strong {
+  font-size: 1rem;
+  color: #dbe4ff;
+}
+
+.rt-step span {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.rt-selected-label {
+  color: #6ee7b7 !important;
+  font-size: 0.82rem !important;
+}
+
+.rt-step-connector {
+  width: 60px;
+  height: 2px;
+  background: rgba(255,255,255,0.1);
+  flex-shrink: 0;
+  margin: 0 8px;
+}
+
+.back-to-outbound-btn {
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #dbe4ff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+  white-space: nowrap;
+}
+
+.back-to-outbound-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.loading {
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #050816;
+
+  color: white;
+  font-size: 1.3rem;
+}
+
+@media (max-width: 1100px) {
+
+  .flight-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .flight-right {
+    width: 100%;
+  }
+
+  .results-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+
+  .route-main h1 {
+    font-size: 2.8rem;
+  }
+
+  .search-hero,
+  .results-container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .flight-timeline {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .timeline-center {
+    width: 100%;
+  }
+
+  .flight-card {
+    padding: 24px;
+  }
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: white !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
