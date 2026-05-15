@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const GATEWAY_URL = 'http://localhost:8080';
+const GATEWAY_URL = process.env.REACT_APP_GATEWAY_URL;
 
 function authHeader() {
   const token = localStorage.getItem('token');
