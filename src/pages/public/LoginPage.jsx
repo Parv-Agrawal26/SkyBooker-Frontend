@@ -50,8 +50,7 @@ function loadGoogleScript(callback) {
 }
 
 // ── REPLACE with your actual Google Client ID ──────────────────────────────────
-const GOOGLE_CLIENT_ID =
-  "696364307002-vaeu51cudrft0sh0dimjacfkk71vf07u.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
 // ── Frontend Validators ────────────────────────────────────────────────────────
 const VALIDATORS = {
@@ -87,7 +86,7 @@ function validate(field, value) {
 
 function extractError(err) {
   if (!err.response)
-    return "Cannot connect to server. Make sure the API gateway (port 8080) and auth service (port 8081) are running.";
+    return "Cannot connect to server. Please try again later.";
   const data = err.response.data;
   if (!data) return `Server error: ${err.response.status}`;
   if (typeof data === "string") return data;

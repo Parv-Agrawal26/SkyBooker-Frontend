@@ -12,7 +12,7 @@ export default function PaymentPage() {
   const navigate           = useNavigate();
   const { userEmail }      = useAuth();
 
-  const amount   = parseFloat(searchParams.get('amount') || 4500);
+  const amount   = parseFloat(searchParams.get('amount') || 0);
   const flightId = searchParams.get('flightId');
   const selectedSeatNumbers = (searchParams.get('seats') || '').split(',').filter(Boolean);
 
@@ -32,7 +32,7 @@ export default function PaymentPage() {
   const [timeLeft, setTimeLeft]       = useState(HOLD_DURATION);
   const timerRef = useRef(null);
 
-  const taxes = Math.round(amount * 0.18);
+  const taxes = Math.round(amount * parseFloat(process.env.REACT_APP_GST_RATE || 0.18));
   const total  = amount + taxes;
 
   useEffect(() => {
