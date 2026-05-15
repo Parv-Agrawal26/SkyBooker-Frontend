@@ -60,8 +60,6 @@ export default function StaffDashboard() {
 
   const fetchFlights = useCallback(async () => {
     setLoading(true);
-    setSeatsMap({});  // clear seat cache so re-expanding fetches fresh data
-    setExpandedFlightId(null);
     try {
       const res = await flightApi.getAll();
       setFlights(res.data);
@@ -372,9 +370,6 @@ export default function StaffDashboard() {
                 />
                 <button className="icon-btn" title="Sort by departure date" onClick={() => setSortAsc(p => !p)}>
                   {sortAsc ? '↑ Date' : '↓ Date'}
-                </button>
-                <button className="icon-btn" title="Refresh" onClick={fetchFlights}>
-                  ↻ Refresh
                 </button>
               </div>
             </div>

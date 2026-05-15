@@ -19,10 +19,13 @@ axios.interceptors.response.use(
 );
 
 export const authApi = {
-  register:    (data) => axios.post(`${GATEWAY_URL}/auth/register`, data),
-  login:       (data) => axios.post(`${GATEWAY_URL}/auth/login`, data),
-  googleLogin: (data) => axios.post(`${GATEWAY_URL}/auth/google`, data),
-  getProfile:  ()     => axios.get(`${GATEWAY_URL}/auth/profile`, { headers: authHeader() }),
+  register:      (data) => axios.post(`${GATEWAY_URL}/auth/register`, data),
+  login:         (data) => axios.post(`${GATEWAY_URL}/auth/login`, data),
+  forgotPassword:(data) => axios.post(`${GATEWAY_URL}/auth/forgot-password`, data),
+  verifyResetOtp:(data) => axios.post(`${GATEWAY_URL}/auth/verify-reset-otp`, data),
+  resetPassword: (data) => axios.post(`${GATEWAY_URL}/auth/reset-password`, data),
+  googleLogin:   (data) => axios.post(`${GATEWAY_URL}/auth/google`, data),
+  getProfile:    ()     => axios.get(`${GATEWAY_URL}/auth/profile`, { headers: authHeader() }),
 };
 
 export const flightApi = {

@@ -120,6 +120,8 @@ export default function LoginPage() {
     staffSecretKey: "",
     adminSecretKey: "",
   });
+  const [forgotForm, setForgotForm] = useState({ email: "", otp: "", newPassword: "" });
+  const [forgotStage, setForgotStage] = useState("request");
 
   // ── Use a ref so Google's callback always has the latest navigate/login ───────
   const authRef = useRef({ login, navigate, redirectTo });
@@ -272,6 +274,79 @@ export default function LoginPage() {
         return n;
       });
   }
+
+  function handleForgotChange(field, value) {
+    setForgotForm((p) => ({ ...p, [field]: value }));
+    if (fieldErrors[field])
+      setFieldErrors((p) => {
+        const n = { ...p };
+        delete n[field];
+        return n;
+      });
+  }
+
+  async function handleForgotSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    const errors = {};
+    if (!forgotForm.email.trim()) errors.email = "Email is required";
+    else {
+      const e = validate("email", forgotForm.email);
+      if (e) errors.email = e;
+    }
+
+    if (forgotStage === "verify") {
+      if (!forgotForm.otp.trim()) errors.otp = "OTP is required";
+    }
+
+    if (forgotStage === "reset") {
+      if (!forgotForm.newPassword.trim()) errors.newPassword = "New password is required";
+      else {
+        const p = validate("password", forgotForm.newPassword);
+        if (p) errors.newPassword = p;
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
+    setLoading(true);
+
+    try {
+      if (forgotStage === "request") {
+        await authApi.forgotPassword({ email: forgotForm.email });
+        setSuccess("OTP sent to your email. Enter the code to verify it.");
+        setForgotStage("verify");
+      } else if (forgotStage === "verify") {
+        await authApi.verifyResetOtp({
+          email: forgotForm.email,
+          otp: forgotForm.otp,
+        });
+        setSuccess("OTP verified. Now enter your new password.");
+        setForgotStage("reset");
+      } else {
+        await authApi.resetPassword({
+          email: forgotForm.email,
+          otp: forgotForm.otp,
+          newPassword: forgotForm.newPassword,
+        });
+        setSuccess("Password reset successful. Please log in with your new password.");
+        setTab("login");
+        setForgotStage("request");
+        setForgotForm({ email: "", otp: "", newPassword: "" });
+      }
+    } catch (err) {
+      setError(extractError(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function handleLoginChange(field, value) {
     setLoginForm((p) => ({ ...p, [field]: value }));
     if (fieldErrors[field])
@@ -415,6 +490,22 @@ export default function LoginPage() {
                   </button>
                 </form>
 
+                <div className="forgot-link-row">
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={() => {
+                      setTab("forgot");
+                      setError("");
+                      setSuccess("");
+                      setFieldErrors({});
+                      setForgotStage("request");
+                    }}
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+
                 <div className="oauth-divider">
                   <span>OR CONTINUE WITH</span>
                 </div>
@@ -423,6 +514,92 @@ export default function LoginPage() {
                   id="google-btn-container"
                   className="google-btn-wrapper"
                 ></div>
+              </>
+            )}
+
+            {tab === "forgot" && (
+              <>
+                <form onSubmit={handleForgotSubmit} className="auth-form">
+                  <div className="form-group">
+                    <label>Email Address</label>
+                    <input
+                      type="email"
+                      placeholder="your@email.com"
+                      value={forgotForm.email}
+                      onChange={(e) => handleForgotChange("email", e.target.value)}
+                      className={fieldErrors.email ? "input-error" : ""}
+                      required
+                      disabled={forgotStage !== "request"}
+                    />
+                    <FieldErr field="email" />
+                  </div>
+
+                  {forgotStage === "verify" && (
+                    <div className="form-group">
+                      <label>OTP Code</label>
+                      <input
+                        type="text"
+                        placeholder="Enter OTP"
+                        maxLength={6}
+                        value={forgotForm.otp}
+                        onChange={(e) => handleForgotChange("otp", e.target.value.replace(/\D/g, ""))}
+                        className={fieldErrors.otp ? "input-error" : ""}
+                        required
+                      />
+                      <FieldErr field="otp" />
+                    </div>
+                  )}
+
+                  {forgotStage === "reset" && (
+                    <>
+                      <div className="info-text">
+                        OTP verified. Enter your new password below.
+                      </div>
+                      <div className="form-group">
+                        <label>New Password</label>
+                        <input
+                          type="password"
+                          placeholder="Enter new password"
+                          value={forgotForm.newPassword}
+                          onChange={(e) => handleForgotChange("newPassword", e.target.value)}
+                          className={fieldErrors.newPassword ? "input-error" : ""}
+                          required
+                        />
+                        <FieldErr field="newPassword" />
+                      </div>
+                    </>
+                  )}
+
+                  <button type="submit" className="submit-btn" disabled={loading}>
+                    {forgotStage === "request"
+                      ? loading
+                        ? "Sending OTP..."
+                        : "Send OTP"
+                      : forgotStage === "verify"
+                      ? loading
+                        ? "Verifying..."
+                        : "Verify OTP"
+                      : loading
+                      ? "Resetting..."
+                      : "Reset Password"}
+                  </button>
+                </form>
+
+                <div className="forgot-link-row">
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={() => {
+                      setTab("login");
+                      setError("");
+                      setSuccess("");
+                      setFieldErrors({});
+                      setForgotStage("request");
+                    }}
+                  >
+                    Back to login
+                  </button>
+                </div>
               </>
             )}
 
