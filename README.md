@@ -61,7 +61,7 @@ Before you begin, ensure you have the following installed:
 
 ## 🚀 Getting Started
 
-### 1. Clone the repository
+### 1. Clone the repo
 
 ```bash
 git clone https://github.com/yourusername/SkyBooker-Frontend.git
