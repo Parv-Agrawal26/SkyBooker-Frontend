@@ -93,27 +93,45 @@ REACT_APP_GATEWAY_URL=http://localhost:8080
 Start the development server:
 
 ```bash
-npm start
+src/
+│
+├── api/
+│   └── api.js
+│
+├── components/
+│   ├── Navbar.jsx
+│   ├── ProtectedRoute.jsx
+│   └── RoleRoute.jsx
+│
+├── context/
+│   └── AuthContext.jsx
+│
+├── pages/
+│   ├── public/
+│   │   ├── HomePage.jsx
+│   │   ├── LoginPage.jsx
+│   │   └── SearchResults.jsx
+│   │
+│   ├── passenger/
+│   │   ├── BookingConfirm.jsx
+│   │   ├── MyBookings.jsx
+│   │   ├── PaymentPage.jsx
+│   │   └── ProfilePage.jsx
+│   │
+│   ├── staff/
+│   │   └── StaffDashboard.jsx
+│   │
+│   └── admin/
+│       └── AdminDashboard.jsx
+│
+├── __tests__/
+│   ├── AuthContext.test.jsx
+│   ├── HomePage.test.jsx
+│   ├── LoginPage.test.jsx
+│   ├── Navbar.test.jsx
+│   ├── ProtectedRoute.test.jsx
+│   └── RoleRoute.test.jsx
+│
+├── App.jsx
+└── index.js
 ```
-
-The application will be available at [http://localhost:3000](http://localhost:3000). The page will reload automatically if you make edits.
-
-## 📜 Available Scripts
-
-In the project directory, you can run:
-
-- `npm start`: Runs the app in development mode.
-- `npm test`: Launches the test runner in interactive watch mode.
-- `npm run build`: Builds the app for production to the `build` folder. It correctly bundles React in production mode and optimizes the build for the best performance.
-
-## 🔒 Authentication Flow
-
-1. User submits login credentials via the `/login` route.
-2. The `authApi` makes a request to the backend.
-3. Upon success, a JWT token is returned along with user details (Email, Role).
-4. The `AuthContext` saves these details to `localStorage` and updates the application state.
-5. `Axios` interceptors automatically append `Authorization: Bearer <token>` to all subsequent API requests.
-
----
-
-*Designed and developed by Parv Agrawal.*
