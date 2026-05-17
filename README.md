@@ -1,180 +1,96 @@
 # ✈️ SkyBooker Frontend
 
-A modern airline booking frontend application built with React.js for seamless flight search, booking, seat selection, passenger management, and payment processing.
+> The modern, responsive, and user-friendly web interface for the **SkyBooker Airline Management System**.
 
-SkyBooker provides a complete airline reservation experience with role-based dashboards for passengers, staff, and administrators.
-
----
-
-# 🚀 Features
-
-## 🌍 Public Features
-
-- Flight search system
-- Airport autocomplete suggestions
-- One-way and round-trip booking
-- Flight sorting by price and duration
-- Responsive modern UI
-- Real-time airport search dropdown
-- Passenger count selection
-- Route swapping functionality
-- Login & authentication system
-- Protected routes
-- Role-based access control
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![React Router](https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white)
+![Axios](https://img.shields.io/badge/axios-671ddf?&style=for-the-badge&logo=axios&logoColor=white)
 
 ---
 
-## 👤 Passenger Features
+## 📖 Overview
 
-### Flight Booking
+The **SkyBooker Frontend** is a Single Page Application (SPA) built with React. It provides a seamless experience for passengers to search, book, and manage flights, while also offering dedicated dashboards for Airline Staff and System Administrators to manage flights, airlines, and airports.
 
-- Search available flights
-- View detailed flight listings
-- Select flights for booking
-- Round-trip flight booking support
-- Dynamic booking flow
+This application connects to the SkyBooker Microservices Backend via an API Gateway.
 
-### Seat Management
+## ✨ Features
 
-- View available seats
-- Seat hold system
-- Seat confirmation system
-- Seat release functionality
-- Seat class filtering
-- Real-time seat availability
-- Seat pricing support
+- **Public Access**: Explore flights, search for availability, and view routes.
+- **Passenger Portal**: Secure user authentication, flight booking, seat selection, and profile management.
+- **Staff Dashboard**: Dedicated tools for Airline Staff to manage flight schedules, update statuses, and view passenger manifests.
+- **Admin Dashboard**: System-wide control for Administrators to manage airlines, airports, and backend administration tasks.
+- **Role-Based Access Control (RBAC)**: Secure routing ensuring users only access authorized areas.
+- **Centralized State Management**: Efficient authentication and user session handling via React Context API.
 
-### Passenger Management
+## 🛠️ Tech Stack
 
-- Add passenger details
-- Passenger count validation
-- Passenger booking association
-- Booking-based passenger retrieval
+- **Framework**: [React 18](https://reactjs.org/) (Create React App)
+- **Routing**: [React Router DOM v6](https://reactrouter.com/)
+- **HTTP Client**: [Axios](https://axios-http.com/) (configured with interceptors for JWT injection)
+- **Icons**: [Lucide React](https://lucide.dev/) & [React Icons](https://react-icons.github.io/react-icons/)
+- **Styling**: Custom CSS for scalable and modular design
 
-### Payment System
+## 📂 Project Structure
 
-- Razorpay integration
-- Multiple payment modes
-- Dynamic tax calculation
-- Booking payment verification
-- Seat hold expiration timer
-- Secure checkout flow
-- Payment status tracking
+```text
+SkyBooker-Frontend/
+├── public/                 # Static assets (index.html, manifest, etc.)
+├── src/
+│   ├── api/                # Axios configuration and API endpoint modules
+│   ├── components/         # Reusable UI components (Navbar, ProtectedRoute)
+│   ├── context/            # React Context (AuthContext for state management)
+│   ├── pages/              # Domain-specific page components
+│   │   ├── admin/          # Admin Dashboard
+│   │   ├── passenger/      # Booking, Payment, Profile, Seat Selection
+│   │   ├── public/         # Home, Login, Search Results
+│   │   └── staff/          # Staff Dashboard
+│   ├── App.jsx             # Main application component and routing configuration
+│   └── index.js            # React application entry point
+├── .env.example            # Example environment variables
+├── package.json            # Project dependencies and scripts
+└── README.md               # Project documentation
+```
 
-### Booking Confirmation
+## ⚙️ Prerequisites
 
-- Booking success screen
-- Flight itinerary display
-- Passenger information display
-- Booking summary
-- Payment details
+Before you begin, ensure you have the following installed:
+- **Node.js** (v16.x or higher)
+- **npm** (v8.x or higher)
+- A running instance of the **SkyBooker Backend Microservices** (specifically the API Gateway).
 
-### Profile & Booking History
+## 🚀 Getting Started
 
-- Passenger profile page
-- My bookings page
-- Booking tracking
-- Previous booking records
+### 1. Clone the repo
 
----
+```bash
+git clone https://github.com/yourusername/SkyBooker-Frontend.git
+cd SkyBooker-Frontend
+```
 
-## 👨‍✈️ Staff Dashboard Features
+### 2. Install dependencies
 
-### Flight Management
+```bash
+npm install
+```
 
-- Add new flights
-- Update flight status
-- Flight listing management
-- Flight search & sorting
-- Real-time flight monitoring
+### 3. Environment Configuration
 
-### Seat Administration
+Create a `.env` file in the root directory. You can use the provided `.env.example` as a template:
 
-- Add seats to flights
-- View seat availability
-- Seat analytics
-- Expandable seat management panels
+```bash
+cp .env.example .env
+```
 
-### Passenger Operations
+Ensure the API Gateway URL is correctly pointed to your local or deployed backend environment:
 
-- Passenger lookup by ticket
-- Passenger lookup by booking ID
-- Passenger editing system
-- Booking passenger management
-- Flight passenger list
+```env
+REACT_APP_GATEWAY_URL=http://localhost:8080
+```
 
-### Revenue & Analytics
+### 4. Run the application
 
-- Flight revenue tracking
-- Passenger count monitoring
-- Booking statistics
-
----
-
-## 🛠️ Admin Dashboard Features
-
-### Airline Management
-
-- Add airlines
-- Update airline data
-- Country-based airline management
-- IATA & ICAO support
-- Contact management
-
-### Airport Management
-
-- Add airports
-- Airport search system
-- Airport location management
-- Latitude & longitude support
-- Timezone support
-- Airport autocomplete integration
-
-### Payment Monitoring
-
-- Payment status filtering
-- Payment tracking dashboard
-- Transaction management
-
-### Admin Utilities
-
-- Form validation
-- Toast notifications
-- Confirmation modals
-- Error handling system
-
----
-
-# 🧱 Tech Stack
-
-## Frontend
-
-- React.js
-- React Router DOM
-- Axios
-- Lucide React Icons
-- React Icons
-- CSS3
-
-## API Communication
-
-- REST APIs
-- Axios HTTP Client
-- Token-based authentication
-
-## Payment Gateway
-
-- Razorpay Checkout Integration
-
-## Testing
-
-- React Testing Library
-- Jest DOM
-- User Event Testing
-
----
-
-# 📂 Project Structure
+Start the development server:
 
 ```bash
 src/
