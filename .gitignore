@@ -1,4 +1,43 @@
-node_modules
+# 📦 Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# 🧪 Testing and Coverage
+/coverage
+coverage_output.txt
+coverage_output_utf8.txt
+
+# 🏗️ Production Builds
+/build
+/dist
+/out
+
+# 📝 Environment Variables
 .env
 .env.local
-.env.production
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 🪵 Debugging and Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 💻 Editor/IDE Configurations
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+
+# 🍏 Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
